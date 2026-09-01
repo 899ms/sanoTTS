@@ -29,7 +29,7 @@
 /* ---- SanoTTS Arduino-library addition: sibilant fricative-noise
  * injection -------------------------------------------------------------
  * NOT part of the upstream mcu/ portable core (see mcu/src/snt_tts.c in
- * the saanoTTS repo) -- ported here from the ESP32-S3 standalone-app
+ * the sanoTTS repo) -- ported here from the ESP32-S3 standalone-app
  * reference implementation, mcu/ports/esp32s3/firmware/main/fsd_e2e.c
  * (search "sibilant"), which never fed back into the portable runtime.
  * Fixes the whistly/metallic /s z sh zh/ artifact: the deterministic

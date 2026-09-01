@@ -1,6 +1,6 @@
 /* host_check_main.c -- host correctness/self-containment proof for the
  * Arduino library's copied+patched runtime sources. Adapted from
- * mcu/test/golden_main.c in the saanoTTS repo (same golden-fixture
+ * mcu/test/golden_main.c in the sanoTTS repo (same golden-fixture
  * format, same corr>=0.98 gate), plus a second pass that exercises the
  * sibilant-injection addition (see src/snt_tts.c / src/snt_tts.h) using
  * the SAME calibration constants shipped in

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # extras/host_check.sh -- proves the SanoTTS Arduino library's C sources
 # are self-contained (compile standalone, no Arduino/PlatformIO toolchain
-# needed) and that the primary 745k-model pipeline is still bit-correct
+# needed) and that the primary 567k-model pipeline is still bit-correct
 # after being copied out of mcu/ and patched with the sibilant-injection
 # addition.
 #
@@ -11,7 +11,7 @@
 #      an ESP-IDF header to even compile.
 #   2. Link the primary pipeline (snt_tts.c + snt_kernels_ref.c +
 #      snt_port_default.c) against the shipped golden fixture
-#      (mcu/test/fixtures/en_us_r7 in the parent saanoTTS checkout) and
+#      (mcu/test/fixtures/en_us_r7 in the parent sanoTTS checkout) and
 #      run host_check_main.c's two-pass gate (default-off bit-exactness,
 #      then a reachability+non-triviality check of the sibilant fix).
 #
@@ -45,7 +45,7 @@ echo "== phase 2: link + golden correctness gate =="
 golden="$lib/../mcu/test/fixtures/en_us_r7"
 if [ ! -d "$golden" ]; then
   echo "golden fixture not found at $golden -- this phase only runs from a"
-  echo "full saanoTTS checkout (arduino/ is a subdirectory of it); skipping."
+  echo "full sanoTTS checkout (arduino/ is a subdirectory of it); skipping."
   exit 0
 fi
 "$CC" $CFLAGS -DFSD_FAST_MATH \

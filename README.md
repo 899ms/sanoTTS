@@ -187,15 +187,17 @@ SCOREQ from 3.70 to 4.16.
 | | amy-small | 1.08 M | 3.70 |
 | | heart (24 kHz) | 2.27 M | 3.51 |
 | | heart-nano (int8, 24 kHz) | 294 k | 2.30 |
-| | robot (on-device, int8) | 745 k | — |
+| | robot (on-device, int8) | 567 k | — |
 | Nepali नेपाली | Nepali | 1.47 M | — |
 | Hindi हिन्दी | Hindi | 1.50 M | — |
 | Vietnamese Tiếng Việt | Vietnamese | 1.46 M | — |
 | Indonesian Bahasa | Indonesian | 1.46 M | — |
 | Chinese 中文 | Chinese | 1.50 M | — |
 
-The "robot" row is the same 745k-parameter model that runs on the ESP32-S3 —
-bit-exact with the chip's own output. SCOREQ is only reported for the English
+The "robot" row is the same 567,008-parameter model that runs on the ESP32-S3 —
+bit-exact with the chip's own output. (Some older packaging, including the
+`mcu-kristin-745k-q8.tar.gz` filename, carries a "745k" label; that was a
+directory name, never a parameter count for these binaries.) SCOREQ is only reported for the English
 voices, which share a common eval set; the other languages haven't been scored
 against a comparable reference yet.
 
@@ -218,7 +220,7 @@ minimum correlation, the float build reproduces the training-side output at
 espeak-ng provides phoneme IDs; a duration model predicts timing; an acoustic
 model predicts generator latents; a decoder renders 22 kHz audio.
 The web voices (amy, kristin, hfc, and the other languages) use a compact
-time-domain decoder running in fp32 WASM; the 745k on-device model instead uses
+time-domain decoder running in fp32 WASM; the on-device model instead uses
 a quantized int8 iSTFT decoder, sized to fit and run in real time on the
 ESP32-S3. `heart` / `heart-nano` predict a 100-band mel spectrogram and render it
 with a noise-fed ConvNeXt + iSTFT decoder at 24 kHz (`mcu/src/snt_nano.c`).

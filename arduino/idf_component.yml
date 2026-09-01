@@ -1,17 +1,17 @@
 version: "0.1.0"
 description: >-
   On-device neural text-to-speech: a portable C99 int8 iSTFT engine
-  (~745k params, ~680 KB weights). Feed it Piper phoneme ids (from a host
+  (567,008 params, ~680 KB weights). Feed it Piper phoneme ids (from a host
   G2P tool); it synthesizes 22.05 kHz PCM on-chip, no network, no cloud TTS
   call. Also ships an int8-decoder path for bigger Piper-class voices and
   the sibilant fricative-noise fix, off by default.
 license: "GPL-3.0-or-later"
-url: "https://github.com/Ampixa/saanotts"
-repository: "https://github.com/Ampixa/saanotts.git"
+url: "https://github.com/Ampixa/sanoTTS"
+repository: "https://github.com/Ampixa/sanoTTS.git"
 repository_info:
   path: "arduino"
-documentation: "https://github.com/Ampixa/saanotts/blob/master/arduino/README.md"
-issues: "https://github.com/Ampixa/saanotts/issues"
+documentation: "https://github.com/Ampixa/sanoTTS/blob/master/arduino/README.md"
+issues: "https://github.com/Ampixa/sanoTTS/issues"
 maintainers:
   - "Ampixa <ashish@ampixa.com>"
 tags:

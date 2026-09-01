@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""gen_golden_ids.py -- turn a saanoTTS e2e_ids.bin (int32 Piper phoneme
+"""gen_golden_ids.py -- turn a sanoTTS e2e_ids.bin (int32 Piper phoneme
 ids, little-endian) into a small C header for embedding in a sketch.
 
 The ids array is tiny (a few hundred bytes for one utterance) -- this is

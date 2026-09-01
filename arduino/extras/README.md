@@ -8,16 +8,16 @@ into a sketch.
 | File | What |
 | --- | --- |
 | `gen_golden_ids.py` | Turns an `e2e_ids.bin` (int32 LE Piper phoneme ids) into a small C header. Used to produce `examples/SpeakGolden/golden_ids.h`. |
-| `host_check.sh` | Compiles every `src/*.c` + `src/SanoTTS.cpp` file standalone with plain `cc`/`c++` (proves the source set has no hidden Arduino/ESP-IDF dependency), then links the primary pipeline against the golden fixture and checks it still clears the upstream `mcu/` correctness gate. Run it from a full saanoTTS checkout: `./host_check.sh`. |
+| `host_check.sh` | Compiles every `src/*.c` + `src/SanoTTS.cpp` file standalone with plain `cc`/`c++` (proves the source set has no hidden Arduino/ESP-IDF dependency), then links the primary pipeline against the golden fixture and checks it still clears the upstream `mcu/` correctness gate. Run it from a full sanoTTS checkout: `./host_check.sh`. |
 | `host_check_main.c` / `host_check_cpp_main.cpp` | The two test harnesses `host_check.sh` builds and runs (raw C API, then the `SanoTTS` C++ class). |
 
 ## Flashing the model blobs (LittleFS / SPIFFS)
 
 The example sketch (`examples/SpeakGolden`) loads `front_q8.bin` (~280 KB)
 and `model_q8.bin` (~400 KB) from a LittleFS filesystem image at runtime --
-they are **not** embedded in the sketch. Get them from a saanoTTS release
+they are **not** embedded in the sketch. Get them from a sanoTTS release
 (see the top-level `arduino/README.md`'s "Model blobs" section for the
-download pointer), or from `mcu/test/fixtures/en_us_r7/` in a full saanoTTS
+download pointer), or from `mcu/test/fixtures/en_us_r7/` in a full sanoTTS
 checkout if you just want to run the golden-fixture demo end to end.
 
 Three ways to build+flash the filesystem image, pick whichever matches

@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* ---- SanoTTS: the 745k int8 fsd pipeline ------------------------------ */
+/* ---- SanoTTS: the 567k int8 fsd pipeline ------------------------------ */
 
 SanoTTS::SanoTTS()
     : model_blob_(nullptr), front_blob_(nullptr), arena_(nullptr),

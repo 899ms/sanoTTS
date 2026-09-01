@@ -1,5 +1,5 @@
-/* SanoTTS.h -- Arduino/PlatformIO C++ wrapper around the saanoTTS mcu/
- * portable C99 runtime (int8 iSTFT engine, ~745k params, ~680 KB weights).
+/* SanoTTS.h -- Arduino/PlatformIO C++ wrapper around the sanoTTS mcu/
+ * portable C99 runtime (int8 iSTFT engine, 567,008 params, ~680 KB weights).
  *
  * ------------------------------------------------------------------------
  * Where phoneme ids come from
@@ -16,14 +16,14 @@
  *      espeak-ng source, a SPIFFS data partition, and three ESP-IDF-
  *      specific patches (gnu11, a data-path patch, stack sizing). See
  *      mcu/ports/esp32s3/firmware/components/espeak-ng/README.md in the
- *      saanoTTS repo if you want to wire that in yourself; the id-producing
+ *      sanoTTS repo if you want to wire that in yourself; the id-producing
  *      half (esp_g2p.c) is a small, separable piece of that firmware.
  *
  * ------------------------------------------------------------------------
  * What this library ships vs. what it only documents
  * ------------------------------------------------------------------------
  *  SHIPPED, compiled by default (every src/ .c file):
- *   - snt_tts.c + snt_kernels_ref.c   the 745k int8 fsd pipeline (SanoTTS
+ *   - snt_tts.c + snt_kernels_ref.c   the 567k int8 fsd pipeline (SanoTTS
  *                                     class below) -- the product path.
  *   - snt_front_f32.c + snt_piperlite.c / snt_piperlite_q8.c
  *                                     the bigger-voice path (fp32 front +
@@ -106,7 +106,7 @@ void snt_port_dualcore_start(void);
 }
 
 /* ------------------------------------------------------------------------
- * SanoTTS -- the 745k int8 fsd pipeline (the product path: en_US Kristin
+ * SanoTTS -- the 567k int8 fsd pipeline (the product path: en_US Kristin
  * and compatible voices sharing the same architecture dims baked into
  * the src/model header files at compile time -- dimensions are fixed by this build,
  * weights are swappable as long as they match those dims).

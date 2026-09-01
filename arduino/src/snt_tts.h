@@ -40,7 +40,7 @@ int snt_synthesize(const snt_config *cfg,
  * Sibilant fricative-noise injection: fixes the whistly/metallic
  * /s z sh zh/ artifact of the deterministic acoustic student. See the
  * block comment above sib_is_sibilant() in snt_tts.c for the full story;
- * ported from mcu/ports/esp32s3/firmware/main/fsd_e2e.c in the saanoTTS
+ * ported from mcu/ports/esp32s3/firmware/main/fsd_e2e.c in the sanoTTS
  * repo, which never fed this fix back into the portable core.
  *
  * tea_std: pointer to FSD_CODE_DIM (40) per-channel teacher-latent std

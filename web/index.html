@@ -226,7 +226,7 @@
         <td class="listen-cell"><audio controls preload="none" src="samples-release/english-heartnano-1.mp3" title="Welcome! This entire voice runs in under four megabytes, with no cloud at all."></audio></td>
       </tr>
       <tr>
-        <td class="voices-cell"><div class="vrow"><span class="vname">robot (on-device)</span><span class="vparams">745k params</span> <span class="pill mute">int8 · on-chip</span>
+        <td class="voices-cell"><div class="vrow"><span class="vname">robot (on-device)</span><span class="vparams">567k params</span> <span class="pill mute">int8 · on-chip</span>
           <span class="vnote">the model that runs faster than real time on a $3 ESP32-S3 — same weights, same phonemizer</span></div></td>
         <td class="listen-cell"><audio controls preload="none" src="samples-release/mcu-745k.mp3" title="This clip is the on-device model's own output, bit-exact with the chip."></audio></td>
       </tr>
@@ -436,7 +436,7 @@ const SR = 22050, ARENA = 2*1024*1024, OUT_CAP = 400000, ASSET = "assets/", VOIC
 const $ = id => document.getElementById(id);
 const log = m => { $("log").textContent += m + "\n"; };
 
-// The 745k on-device "mcu" voice keeps its own int8 runtime (snt_tts.js,
+// The 567k on-device "mcu" voice keeps its own int8 runtime (snt_tts.js,
 // SaanoTTS module) and default en-us+kristin G2P table (slot 0) -- it
 // predates the multi-voice front+decoder chain below and is bit-exact with
 // the ESP32-S3 firmware, so it is left untouched. Every other voice runs
@@ -453,7 +453,7 @@ const VOICES = [
   {key:"nepali",   label:"Nepali",     params:"1.47M", flag:"\uD83C\uDDF3\uD83C\uDDF5", live:true, emj:"\uD83E\uDD9D"},
   {key:"hindi",    label:"Hindi",      params:"1.50M", flag:"\uD83C\uDDEE\uD83C\uDDF3", live:true, emj:"\uD83E\uDD9A"},
   {key:"chinese",  label:"Chinese",    params:"1.50M", flag:"\uD83C\uDDE8\uD83C\uDDF3", live:true, emj:"\uD83D\uDC3C"},
-  {key:"mcu",      label:"English",    params:"745k",  flag:"\uD83C\uDDFA\uD83C\uDDF8", live:true, emj:"\uD83E\uDD16",
+  {key:"mcu",      label:"English",    params:"567k",  flag:"\uD83C\uDDFA\uD83C\uDDF8", live:true, emj:"\uD83E\uDD16",
     espeakVoice:"en-us", g2pSlot:0, lengthScale:1.0},
   // Different architecture and a different frontend contract from every voice
   // above: character-level Misaki phonemes into the Trellis-RIFT stack, so it

@@ -1,4 +1,4 @@
-/* snt_front_f32.h -- portable fp32 reference of the saanoTTS "front half":
+/* snt_front_f32.h -- portable fp32 reference of the sanoTTS "front half":
  * phoneme ids -> per-token frame counts (DurationStudent,
  * tools/train_roota_piper_duration_student.py) -> expanded features ->
  * latent [out_channels, frames] (ContextualLatentStudent "token_context",

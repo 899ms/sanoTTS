@@ -1,12 +1,12 @@
 # SanoTTS (Arduino / PlatformIO library)
 
-On-device neural text-to-speech: the saanoTTS `mcu/` portable C99 int8
-iSTFT engine (~745k parameters, ~680 KB weights), packaged as a standard
+On-device neural text-to-speech: the sanoTTS `mcu/` portable C99 int8
+iSTFT engine (567,008 parameters, ~680 KB weights), packaged as a standard
 Arduino library and a PlatformIO package. Feed it Piper phoneme ids (not
 text — see "Where phoneme ids come from" below); it synthesizes 22.05 kHz
 PCM on-chip, no network, no cloud TTS call.
 
-This is a **packaging** of the saanoTTS `mcu/` runtime, not a reimplementation.
+This is a **packaging** of the sanoTTS `mcu/` runtime, not a reimplementation.
 The correctness story, the port architecture, and the honest per-chip
 performance numbers all live upstream in the parent repo
 (`docs/mcu-classes-and-porting.md`, `mcu/ports/*/README.md`) — this README
@@ -27,21 +27,26 @@ repeat a number this library itself hasn't verified.
 
 ### PlatformIO
 
-```ini
-; platformio.ini
-lib_deps =
-    https://github.com/Ampixa/saanotts.git#master  ; whole-monorepo checkout
+This library lives in the `arduino/` subdirectory of the sanoTTS repo, not
+at repo root, so the reliable install is to vendor that directory into your
+project:
+
+```bash
+git clone https://github.com/Ampixa/sanoTTS
+cp -r sanoTTS/arduino <your-project>/lib/SanoTTS
 ```
 
-PlatformIO's dependency finder walks a git URL looking for
-`library.json`/`library.properties`; since this library lives in a
-subdirectory (`arduino/`) of the saanoTTS monorepo rather than at repo
-root, a plain `lib_deps` git URL will pull the whole repo and PlatformIO's
-library scanner needs to find `arduino/library.json` inside it — verify
-this resolves for your PlatformIO version before relying on it, or vendor
-the `arduino/` directory directly into your project's `lib/` folder
-(`lib/SanoTTS/`) if it doesn't. The layout itself (`library.json` at the
-directory's own root) is correct PlatformIO library format either way.
+A plain git `lib_deps` URL pulls the whole repo and then depends on your
+PlatformIO version finding `arduino/library.json` inside it, which is not
+guaranteed:
+
+```ini
+; platformio.ini -- try this, but fall back to vendoring if it doesn't resolve
+lib_deps = https://github.com/Ampixa/sanoTTS.git#master
+```
+
+The layout itself (`library.json` at the directory's own root) is correct
+PlatformIO library format either way.
 
 ## Where phoneme ids come from
 
@@ -59,13 +64,13 @@ Two ways to get ids:
    data-path patch, and `-std=gnu11` (Arduino's default C dialect for .c
    files may differ). See
    `mcu/ports/esp32s3/firmware/components/espeak-ng/README.md` in the
-   saanoTTS repo if you want to wire it in yourself.
+   sanoTTS repo if you want to wire it in yourself.
 
 ## What's in this library vs. what's a documented pointer only
 
 | Feature | Status |
 | --- | --- |
-| 745k int8 fsd pipeline (duration → acoustic → iSTFT decoder) | **Shipped.** `src/snt_tts.c` + `src/snt_kernels_ref.c`, wrapped by the `SanoTTS` class. |
+| 567k int8 fsd pipeline (duration → acoustic → iSTFT decoder) | **Shipped.** `src/snt_tts.c` + `src/snt_kernels_ref.c`, wrapped by the `SanoTTS` class. |
 | Scalar (Tier-S) int8 kernels, every architecture | **Shipped.** Same reference kernels as `mcu/ports/host` and `mcu/ports/wasm` — correctness-identical by contract, no SIMD. |
 | Optional ESP32 second-core worker | **Shipped**, opt-in. `src/snt_port_default.c`, behind `-DSANOTTS_ESP32_DUALCORE`; plain FreeRTOS task-notify, no esp-nn dependency. Call `tts.enableDualCore()`. |
 | Sibilant fricative-noise injection (fixes whistly /s z sh zh/) | **Shipped**, off by default. Ported into `src/snt_tts.c` from the ESP32-S3 firmware reference (`mcu/ports/esp32s3/firmware/main/fsd_e2e.c`), which had never fed it back into the portable core — see "Sibilant injection" below. |
@@ -107,7 +112,8 @@ measured on your board before shipping with it on. **Never define
 
 ## Memory requirements
 
-Weights: **~680 KB** for the shipped `en_US Kristin` 745k voice
+Weights: **~680 KB** for the shipped `en_US Kristin` voice (567,008
+parameters)
 (`front_q8.bin` ~280 KB + `model_q8.bin` ~400 KB) — flash/PROGMEM-resident;
 the runtime reads them via pointer and never copies the whole thing into
 RAM (it stages small resident working copies out of the arena as it goes).
@@ -132,28 +138,35 @@ short golden demo.
 
 ## Model blobs
 
-**As of this writing, there is no standalone GitHub Release asset that is
-just the two MCU blob files** (`front_q8.bin` + `model_q8.bin`, ~680 KB) —
-checked directly against the repo's actual releases
-(`gh release list --repo Ampixa/saanotts`): the existing releases ship
-either fp16 desktop/browser weights (a different format from these int8
-MCU blobs) inside multi-MB tarballs, or a 236 MB generic preservation
-snapshot. Do not assume a clean download URL exists; there isn't one yet.
+The two int8 blobs the runtime needs are `front_q8.bin` (280,288 B) and
+`model_q8.bin` (399,544 B), 679,832 bytes together. Two equivalent sources:
 
-Until a dedicated release is cut, get the blobs from a saanoTTS checkout:
+**From the release** (no repo clone needed) — `mcu-kristin-745k-q8.tar.gz`
+in the [voices-v1 release](https://github.com/Ampixa/sanoTTS/releases/tag/voices-v1),
+760 KB. It unpacks to both blobs plus `en_us_r7_calibration/` (scale headers
+and golden I/O vectors). The tarball keeps an old `745k` name; the graph
+inside it executes 567,008 parameters (see "Parameter count" below).
 
-- `mcu/test/fixtures/en_us_r7/front_q8.bin` + `model_q8.bin` — the exact
-  pair `examples/SpeakGolden` and this library's own `extras/host_check.sh`
-  are verified against (SHA256SUMS included alongside them).
-- `releases/kristin-20260708/mcu/front_q8.bin` + `model_q8.bin` — the same
-  voice's "corrected MCU package" plus `en_us_r7_calibration/` (scale
-  headers + golden I/O vectors), if that local release directory has been
-  published in the checkout you're working from (it is untracked in the
-  repo as of this writing, so a fresh `git clone` alone will not have it).
+**From a checkout** — `mcu/test/fixtures/en_us_r7/front_q8.bin` +
+`model_q8.bin`, with `SHA256SUMS` alongside. This is the pair
+`examples/SpeakGolden` and `extras/host_check.sh` are verified against.
 
-Publishing a small, standalone `arduino-blobs-<voice>` release (just the
-two files + a checksum) would be the natural next step to make this
-library installable without a full monorepo clone.
+The two sources are **byte-identical**; verified by SHA-256:
+
+```
+921b1aea12a3c982ed0aacac2c3c13f2f627797f24203b6bd542c70a7a8964a8  front_q8.bin
+e81c2c35572c58b9e94c218866d04acacb316441875ce82cea68bf87c58a7417  model_q8.bin
+```
+
+## Parameter count
+
+The deployed graph executes **567,008** parameters: duration 36,164 +
+acoustic 199,536 (157-entry vocabulary) + decoder 331,308. Older packaging,
+including the `mcu-kristin-745k-q8.tar.gz` filename and the
+`selfcontained-745k-20260713` directory, carries a **745k** label. That label
+was a directory/package name, never a parameter count for these binaries, and
+it describes a different, older stack (a 503k-parameter iSTFT decoder). The
+audited breakdown is in `paper/README.md` upstream.
 
 ## ESP32-S3 specifics (firmware-level, not library code)
 
@@ -202,56 +215,48 @@ Three phases, all passing as of this packaging:
    input with it off). The `SanoTTS` C++ class is then exercised the same
    way end to end (`begin()` → `synthesize()` → `enableSibilantInjection()`).
 
-**`arduino-cli` / full ESP32 toolchain compile**: `arduino-cli` was
-installed and the ESP32 core install was started, but it ran out of disk
-space in this environment partway through (the combined esp32/esp32c3/
-esp32c5/esp32c6/esp32h2 toolchain set is several GB) and was not completed.
-This is the explicitly-sanctioned fallback path for that situation: the
-host-level self-containment + correctness check above is the verification
-this packaging relies on. If you have a few GB free, `arduino-cli core
-install esp32:esp32` followed by `arduino-cli compile --fqbn
-esp32:esp32:esp32s3 examples/SpeakGolden` (after providing the model blobs
-per "Model blobs" above, since the sketch will otherwise fail at runtime,
-not compile time, without them) is the natural next check to run.
+**Not yet verified: a board toolchain compile.** The checks above are
+host-level. `examples/SpeakGolden` has not been built under `arduino-cli`
+or PlatformIO for a real target, so treat board-level compilation as
+unproven and report anything that breaks. To run that check yourself:
+
+```bash
+arduino-cli core install esp32:esp32
+arduino-cli compile --fqbn esp32:esp32:esp32s3 examples/SpeakGolden
+```
+
+(The sketch fails at runtime, not compile time, if the model blobs are
+missing — see "Model blobs" above.)
 
 ## Distribution channels
 
 | Channel | Status today | How to get the library |
 | --- | --- | --- |
 | Arduino IDE (.zip) | works now | zip the `arduino/` directory, Sketch → Include Library → Add .ZIP Library (see "Install" above) |
-| PlatformIO (`lib_deps` git URL) | works now | `lib_deps = https://github.com/Ampixa/saanotts.git#master` (see "Install" above) |
+| PlatformIO | works now | vendor `arduino/` into your project's `lib/`, or try `lib_deps = https://github.com/Ampixa/sanoTTS.git#master` (see "Install" above) |
 | Arduino Library Manager | not yet submitted | none — no registry listing exists yet |
 | PlatformIO Registry (`pio pkg install`) | not yet published | none — no registry listing exists yet |
 | ESP-IDF Component Registry | not yet published | none — `idf_component.yml` manifest is prepared (`arduino/idf_component.yml`) but nothing has been uploaded |
 
 ### Publishing to registries (maintainer note)
 
-None of the three package-manager registries below have had anything
-submitted or uploaded yet — this is a plan, not a status report.
+Nothing has been submitted to any of the three registries below yet.
 
-- **Arduino Library Manager** — tag a GitHub release of this repo, then
-  submit a one-time pull request adding the repo URL
-  (`https://github.com/Ampixa/saanotts`) to
+- **Arduino Library Manager** — tag a GitHub release, then submit a one-time
+  pull request adding the repo URL (`https://github.com/Ampixa/sanoTTS`) to
   [arduino/library-registry](https://github.com/arduino/library-registry).
-  Arduino's indexer re-scans the repo on every subsequent tag, so only the
-  first submission needs a PR. Run `arduino-lint` against `arduino/` before
-  submitting (see "Compile verification" above for why the full
-  `arduino-cli` toolchain wasn't installed in this environment).
-- **PlatformIO Registry** — `pio pkg publish` run from inside `arduino/`
-  (needs a PlatformIO account; `library.json` in this directory is already
-  in the required format).
-- **ESP-IDF Component Registry** — `compote component upload --name
-  sanotts --namespace ampixa` (needs an Espressif account and an
-  `IDF_COMPONENT_API_TOKEN`); manifest is `arduino/idf_component.yml`. Note
-  its `license: "GPL-3.0"` matches this directory's own
-  `library.properties`/`library.json`, but that bare SPDX identifier is
-  deprecated in favor of `GPL-3.0-only` or `GPL-3.0-or-later` — resolve
-  which one this project actually intends (the `sanotts` PyPI package's
-  `pypkg/pyproject.toml` already says `GPL-3.0-or-later`, a different
-  choice than this directory's own manifests) before the first real
-  upload, since the component registry may validate against current SPDX
-  identifiers strictly.
+  Arduino's indexer re-scans on every later tag, so only the first
+  submission needs a PR. Run `arduino-lint` against `arduino/` first.
+- **PlatformIO Registry** — `pio pkg publish` from inside `arduino/`
+  (needs a PlatformIO account; `library.json` is already in the required
+  format).
+- **ESP-IDF Component Registry** — `compote component upload --name sanotts
+  --namespace ampixa` (needs an Espressif account and an
+  `IDF_COMPONENT_API_TOKEN`); manifest is `arduino/idf_component.yml`.
+
+All three manifests declare `GPL-3.0-or-later`, matching the `sanotts` PyPI
+package.
 
 ## License
 
-GPL-3.0 (see `LICENSE`).
+GPL-3.0-or-later (see `LICENSE`).

@@ -1,7 +1,7 @@
 /* SpeakGolden.ino -- minimal SanoTTS example.
  *
  * What this sketch does:
- *   1. Mounts LittleFS and loads the two saanoTTS model blobs
+ *   1. Mounts LittleFS and loads the two sanoTTS model blobs
  *      (front_q8.bin + model_q8.bin, ~680 KB total) that you flashed
  *      there separately -- see extras/README.md. They are NOT embedded
  *      in this sketch; a 680 KB const array would blow past the flash
@@ -23,7 +23,7 @@
  *          needing a speaker attached.
  *
  * Memory: the 320 KB synthesis arena below is sized for the shipped
- * ~745k-param voice (SanoTTS::recommendedArenaBytes()). See
+ * 567,008-param voice (SanoTTS::recommendedArenaBytes()). See
  * arduino/README.md for which boards actually have that much free RAM
  * (plain ESP32 and ESP32-S3: yes; RP2040: marginal -- read that section
  * before trying this sketch there).
@@ -35,12 +35,25 @@
 #if defined(ARDUINO_ARCH_ESP32)
 #include <FS.h>
 #include <LittleFS.h>
+/* ESP_I2S.h is the arduino-esp32 3.x I2S API. On core 2.x, replace this
+ * include and the i2s calls below with driver/i2s.h, or just let the sketch
+ * fall through to the RMS printout by not wiring a DAC. */
 #include <ESP_I2S.h>
 
-/* ---- I2S wiring -- edit to match your DAC breakout ---- */
+/* ---- I2S wiring -- edit to match your DAC breakout ----
+ * The defaults differ per target because the classic ESP32's pin numbers do
+ * not exist on the S3: GPIO22-25 are absent there, and GPIO26 belongs to the
+ * flash/PSRAM SPI bus. Any three free GPIOs work; these are simply pins that
+ * are broken out and unused on the usual devkits. Check your own board. */
+#if defined(CONFIG_IDF_TARGET_ESP32S3)
+static const int I2S_BCLK = 5;
+static const int I2S_LRCLK = 6;
+static const int I2S_DOUT = 7;
+#else /* classic ESP32 */
 static const int I2S_BCLK = 26;
 static const int I2S_LRCLK = 25;
 static const int I2S_DOUT = 22;
+#endif
 static I2SClass i2s;
 #endif
 
@@ -52,7 +65,7 @@ static float g_pcm[PCM_CAP];
 /* Synthesis working arena -- caller-owned, never malloc'd internally by
  * the runtime. On a PSRAM-equipped board you can point this at a PSRAM
  * buffer instead (e.g. heap_caps_malloc(n, MALLOC_CAP_SPIRAM)); on plain
- * internal SRAM this static buffer is fine for the shipped 745k voice. */
+ * internal SRAM this static buffer is fine for the shipped voice. */
 static uint8_t g_arena[SanoTTS::recommendedArenaBytes()] __attribute__((aligned(16)));
 
 static SanoTTS tts;
