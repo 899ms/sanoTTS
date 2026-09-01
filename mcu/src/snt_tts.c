@@ -13,6 +13,13 @@
 #include "snt_tts.h"
 
 #include "model/fsd_meta.h"
+
+/* M_PI is POSIX, not C99. Apple's headers expose it under -std=c99; glibc does
+ * not, so a strict-C99 build with GCC fails to compile without this. snt_nano.c
+ * has carried the same guard since it was written. */
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 #include "model/fsd_q8_meta.h"
 #include "model/front_q8_meta.h"
 #include "model/frozen_norm.h"
@@ -27,6 +34,19 @@
 #define LENGTH_SCALE 1.08f
 
 static const unsigned char *g_front, *g_dec;
+
+#ifdef SNT_DUMP_FRONT
+/* Host-only instrumentation (see the SNT_DUMP_FRONT block in the acoustic
+ * stage). Never compiled into a firmware build.
+ *
+ * SNT_DUMP_FRONT_PATH   - write the acoustic stage's output code to this file.
+ * SNT_INJECT_FRONT_PATH - read [T, FSD_CODE_DIM] float32 from this file and use
+ *                         it INSTEAD of the acoustic stage's own output, so an
+ *                         external simulation of the front half can be scored
+ *                         by the real C decoder against the shipped golden. */
+static float *g_dump_ccol;
+static float *g_inject_ccol;
+#endif
 static const signed char *FQ(long o) { return (const signed char *)(g_front + o); }
 static const float *FF(long o) { return (const float *)(g_front + o); }
 static const signed char *DQ(long o) { return (const signed char *)(g_dec + o); }
@@ -132,6 +152,29 @@ static inline float fast_rsqrt(float x) {
 static float gelu(float x) { return 0.5f * x * (1.0f + erff(x * 0.70710678118654752f)); }
 static float silu(float x) { return x / (1.0f + expf(-x)); }
 #define EXPF_M(x) expf(x)
+#endif
+
+/* ---- float-glue ablation (host analysis only; audio is WRONG) ---------
+ * The mirror of SNT_NANO_ABLATE in snt_nano.c, so the two stacks' glue shares
+ * are measured by the same method on the same machine. Without this the nano's
+ * glue share has nothing to be compared against and the device projection in
+ * docs/e12-nano-runtime-projection.md would be a guess.
+ *   1 = exp (spec magnitudes), 2 = rsqrt (phase unit vector),
+ *   3 = gelu, 4 = silu
+ * Never gated, never shipped. */
+#ifdef SNT_R7_ABLATE
+#if SNT_R7_ABLATE == 1
+#undef EXPF_M
+#define EXPF_M(x) (1.0f + 0.001f * (x))
+#elif SNT_R7_ABLATE == 2
+#define fast_rsqrt(x) (1.0f - 0.001f * (x))
+#elif SNT_R7_ABLATE == 3
+#define gelu(x) (0.5f * (x) + 0.05f)
+#elif SNT_R7_ABLATE == 4
+#define silu(x) (0.5f * (x) + 0.05f)
+#else
+#error "SNT_R7_ABLATE must be 1, 2, 3 or 4"
+#endif
 #endif
 
 typedef struct {
@@ -937,6 +980,38 @@ int snt_synthesize(const snt_config *cfg,
                  c1, FF(fb_off[b][4]), FF(fb_off[b][5]), FRONT_AC_FB0_C1_N16,
                  *FF(fb_off[b][6]), ax, atmp, AH, T, FRONT_AC_KERNEL);
     }
+#ifdef SNT_DUMP_FRONT
+    g_dump_ccol = getenv("SNT_DUMP_FRONT_PATH")
+                      ? (float *)malloc(sizeof(float) * (size_t)T * FSD_CODE_DIM)
+                      : NULL;
+    if (getenv("SNT_DUMP_FRONT_PATH") && !g_dump_ccol) {
+        printf("SNT_DUMP_FRONT: out of memory for %d frames\n", T);
+        return 1;
+    }
+    g_inject_ccol = NULL;
+    {
+        const char *inject_path = getenv("SNT_INJECT_FRONT_PATH");
+        if (inject_path) {
+            size_t want = (size_t)T * FSD_CODE_DIM;
+            FILE *fh = fopen(inject_path, "rb");
+            if (!fh) { printf("SNT_INJECT_FRONT: cannot open %s\n", inject_path); return 1; }
+            g_inject_ccol = (float *)malloc(sizeof(float) * want);
+            if (!g_inject_ccol) { fclose(fh); printf("SNT_INJECT_FRONT: OOM\n"); return 1; }
+            if (fread(g_inject_ccol, sizeof(float), want, fh) != want) {
+                fclose(fh);
+                printf("SNT_INJECT_FRONT: %s must hold %d x %d float32\n",
+                       inject_path, T, FSD_CODE_DIM);
+                return 1;
+            }
+            if (fgetc(fh) != EOF) {
+                fclose(fh); printf("SNT_INJECT_FRONT: %s is longer than %d x %d\n",
+                                   inject_path, T, FSD_CODE_DIM);
+                return 1;
+            }
+            fclose(fh);
+        }
+    }
+#endif
     {
         const signed char *ow = res_copy(FQ(FOFF_AC_OUT_W8),
                                          (size_t)FSD_CODE_DIM * FRONT_AC_OUT_N16, rbuf_kc1);
@@ -944,6 +1019,14 @@ int snt_synthesize(const snt_config *cfg,
         for (int t = 0; t < T; t++) {
             q1x1_col(ow, FF(FOFF_AC_OUT_SCALE), FF(FOFF_AC_OUT_BIAS),
                      FRONT_AC_OUT_N16, ax, T, t, ccol, 1, 0, AH, FSD_CODE_DIM);
+#ifdef SNT_DUMP_FRONT
+            if (g_inject_ccol)
+                memcpy(ccol, g_inject_ccol + (size_t)t * FSD_CODE_DIM,
+                       sizeof(float) * FSD_CODE_DIM);
+            if (g_dump_ccol)
+                memcpy(g_dump_ccol + (size_t)t * FSD_CODE_DIM, ccol,
+                       sizeof(float) * FSD_CODE_DIM);
+#endif
             float m = 0.0f;
             for (int i = 0; i < FSD_CODE_DIM; i++) {
                 float v = fabsf(ccol[i]);
@@ -957,6 +1040,46 @@ int snt_synthesize(const snt_config *cfg,
             cscale[t] = s;
         }
     }
+#ifdef SNT_DUMP_FRONT
+    /* Host-only instrumentation for tools/validate_quant_sim_vs_r7.py: dump the
+     * int8-runtime acoustic code so the PyTorch quantisation simulator can be
+     * checked element-wise against the real C arithmetic. Never compiled into a
+     * firmware build; SNT_DUMP_FRONT is set only by `make front-dump`. */
+    {
+        const char *dump_path = getenv("SNT_DUMP_FRONT_PATH");
+        if (dump_path) {
+            FILE *fh = fopen(dump_path, "wb");
+            if (!fh) {
+                printf("SNT_DUMP_FRONT: cannot open %s\n", dump_path);
+                return 1;
+            }
+            int32_t hdr[3] = {(int32_t)n_tokens, (int32_t)T, (int32_t)FSD_CODE_DIM};
+            if (fwrite(hdr, sizeof(int32_t), 3, fh) != 3) { fclose(fh); return 1; }
+            if (fwrite(durs, sizeof(int), (size_t)n_tokens, fh) != (size_t)n_tokens) {
+                fclose(fh); return 1;
+            }
+            /* [T, FSD_CODE_DIM] float: the acoustic student's own output,
+             * before it is re-quantised for the decoder. */
+            if (fwrite(g_dump_ccol, sizeof(float), (size_t)T * FSD_CODE_DIM, fh)
+                != (size_t)T * FSD_CODE_DIM) { fclose(fh); return 1; }
+            /* [T, FSD_CODE_DIM] float: the same code after the per-frame int8
+             * requantisation the decoder actually consumes. */
+            for (int t = 0; t < T; t++) {
+                float row[FSD_CODE_DIM];
+                const signed char *src = c8 + (size_t)t * Q8_PRE_N16;
+                for (int i = 0; i < FSD_CODE_DIM; i++) row[i] = (float)src[i] * cscale[t];
+                if (fwrite(row, sizeof(float), FSD_CODE_DIM, fh) != FSD_CODE_DIM) {
+                    fclose(fh); return 1;
+                }
+            }
+            if (fclose(fh) != 0) { printf("SNT_DUMP_FRONT: close failed\n"); return 1; }
+            free(g_dump_ccol);
+            g_dump_ccol = NULL;
+        }
+    }
+    free(g_inject_ccol);
+    g_inject_ccol = NULL;
+#endif
     g_arena_top = mark_front; /* release ax/th/rbuf_kc* for the decoder phase */
 
 

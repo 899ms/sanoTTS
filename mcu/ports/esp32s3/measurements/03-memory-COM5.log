@@ -1,0 +1,207 @@
+ESP-ROM:esp32s3-20210327
+Build:Mar 27 2021
+rst:0x1 (POWERON),boot:0x8 (SPI_FAST_FLASH_BOOT)
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce2820,len:0x1154
+load:0x403c8700,len:0xd5c
+load:0x403cb700,len:0x2df0
+entry 0x403c88f0
+I (24) boot: ESP-IDF v6.0.1 2nd stage bootloader
+I (25) boot: compile time Aug 22 2026 20:18:14
+I (25) boot: Multicore bootloader
+I (25) boot: chip revision: v0.2
+I (28) boot: efuse block revision: v1.4
+I (31) boot.esp32s3: Boot SPI Speed : 80MHz
+I (35) boot.esp32s3: SPI Mode       : DIO
+I (39) boot.esp32s3: SPI Flash Size : 8MB
+I (43) boot: Enabling RNG early entropy source...
+I (47) boot: Partition Table:
+I (50) boot: ## Label            Usage          Type ST Offset   Length
+I (56) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (63) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (69) boot:  2 factory          factory app      00 00 00010000 00380000
+I (76) boot:  3 espeak           Unknown data     01 82 00390000 000c0000
+I (82) boot: End of partition table
+I (85) esp_image: segment 0: paddr=00010020 vaddr=3c020020 size=160f20h (1445664) map
+I (352) esp_image: segment 1: paddr=00170f48 vaddr=3fc8f800 size=025b8h (  9656) load
+I (354) esp_image: segment 2: paddr=00173508 vaddr=40374000 size=0b6fch ( 46844) load
+I (366) esp_image: segment 3: paddr=0017ec0c vaddr=50000000 size=00024h (    36) load
+I (367) esp_image: segment 4: paddr=0017ec38 vaddr=00000000 size=013e0h (  5088) 
+I (372) esp_image: segment 5: paddr=00180020 vaddr=42000020 size=17f5ch ( 98140) map
+I (401) boot: Loaded app from partition at offset 0x10000
+I (401) boot: Disabling RNG early entropy source...
+I (411) octal_psram: vendor id    : 0x0d (AP)
+I (411) octal_psram: dev id       : 0x02 (generation 3)
+I (411) octal_psram: density      : 0x03 (64 Mbit)
+I (413) octal_psram: good-die     : 0x01 (Pass)
+I (418) octal_psram: Latency      : 0x01 (Fixed)
+I (422) octal_psram: VCC          : 0x01 (3V)
+I (426) octal_psram: SRF          : 0x01 (Fast Refresh)
+I (431) octal_psram: BurstType    : 0x01 (Hybrid Wrap)
+I (436) octal_psram: BurstLen     : 0x01 (32 Byte)
+I (440) octal_psram: Readlatency  : 0x02 (10 cycles@Fixed)
+I (446) octal_psram: DriveStrength: 0x00 (1/1)
+I (450) MSPI Timing: Enter psram timing tuning
+I (455) esp_psram: Found 8MB PSRAM device
+I (458) esp_psram: Speed: 80MHz
+I (461) cpu_start: Multicore app
+I (877) esp_psram: SPI SRAM memory test OK
+I (885) cpu_start: GPIO 44 and 43 are used as console UART I/O pins
+I (886) cpu_start: Pro cpu start user code
+I (886) cpu_start: cpu freq: 240000000 Hz
+I (888) app_init: Application information:
+I (892) app_init: Project name:     nano_s3
+I (895) app_init: App version:      1
+I (899) app_init: Compile time:     Aug 22 2026 20:18:01
+I (904) app_init: ELF file SHA256:  172f5fde3...
+I (908) app_init: ESP-IDF:          v6.0.1
+I (912) efuse_init: Min chip rev:     v0.0
+I (916) efuse_init: Max chip rev:     v0.99 
+I (920) efuse_init: Chip rev:         v0.2
+I (924) heap_init: Initializing. RAM available for dynamic allocation:
+I (930) heap_init: At 3FCA2390 len 00047380 (284 KiB): RAM
+I (935) heap_init: At 3FCE9710 len 00005724 (21 KiB): RAM
+I (940) heap_init: At 3FCF0000 len 00008000 (32 KiB): DRAM
+I (945) heap_init: At 600FE000 len 00001FE8 (7 KiB): RTCRAM
+I (951) esp_psram: Adding pool of 8192K of PSRAM memory to heap allocator
+I (958) spi_flash: detected chip: boya
+I (961) spi_flash: flash io: dio
+W (964) spi_flash: Detected size(16384k) larger than the size in the binary image header(8192k). Using the size in the binary image header.
+I (976) sleep_gpio: Configure to isolate all GPIO pins in sleep state
+I (982) sleep_gpio: Enable automatic switching of GPIO sleep configuration
+I (989) main_task: Started on CPU0
+I (1001) esp_psram: Reserving pool of 32K of internal memory for DMA/internal allocations
+I (1001) main_task: Calling app_main()
+
+
+================ E12-nano on ESP32-S3 ================
+chip    : 2 core(s), rev 2, 240 MHz
+psram   : 8388608 bytes
+heap    : internal free 316783, largest internal block 221184, spiram free 8386156
+blobs   : front @ 0x3c026328, model @ 0x3c05108c (flash XIP, resident=0/0)
+arena   : 204800 bytes @ 0x3fcb2e90 in INTERNAL SRAM (resident=1)
+======================================================
+
+seed    : sha256("000001_i200")[:8] = 2236265385529901705, fixture says 2236265385529901705 OK
+uniform : 64 values, 0 differ -- BIT-EXACT vs torch.rand
+noise   : 1660 values, 552 differ, max |delta| 0.000002 (tol 1e-5) OK
+sincos  : max |error| 0.000005 over |phi| <= 32 (worst at -29.327, tol 1e-4) OK
+
+fixture : row 000001_i200, 73 ids (rows.txt says 73), 105984 golden samples (rows.txt says 105984)
+seeding : cfg.noise_seed = 2236265385529901705 = sha256("000001_i200")[:8], IDENTICAL to the fixture
+
+---- TIMING r00, SINGLE core, SRAM arena ----
+[r00/SRAM/1core] warm-up: rc=0 frames=415 samples=105984 1095847 us (DISCARDED)
+[r00/SRAM/1core] run 1: rc=0 frames=415 samples=105984 arena_peak=128944  1076844 us  RTF 0.243851
+[r00/SRAM/1core] run 2: rc=0 frames=415 samples=105984 arena_peak=128944  1076878 us  RTF 0.243858
+[r00/SRAM/1core] run 3: rc=0 frames=415 samples=105984 arena_peak=128944  1076857 us  RTF 0.243853
+[r00/SRAM/1core] run 4: rc=0 frames=415 samples=105984 arena_peak=128944  1076883 us  RTF 0.243859
+[r00/SRAM/1core] run 5: rc=0 frames=415 samples=105984 arena_peak=128944  1076858 us  RTF 0.243854
+[r00/SRAM/1core] MEDIAN 1076858 us  (min 1076844, max 1076883, spread 0.004%)
+[r00/SRAM/1core] audio 4.416000 s @ 24000 Hz  ==>  RTF = 0.243854   (4.101 x real time)
+
+======== r00/SRAM/2core :: arena 204800 B in INTERNAL SRAM (resident=1) ========
+[r00/SRAM/2core] warm-up: rc=0 frames=415 samples=105984 992704 us (DISCARDED)
+[r00/SRAM/2core] run 1: rc=0 frames=415 samples=105984 arena_peak=128944  992688 us  RTF 0.224793
+[r00/SRAM/2core] run 2: rc=0 frames=415 samples=105984 arena_peak=128944  992734 us  RTF 0.224804
+[r00/SRAM/2core] run 3: rc=0 frames=415 samples=105984 arena_peak=128944  992715 us  RTF 0.224800
+[r00/SRAM/2core] run 4: rc=0 frames=415 samples=105984 arena_peak=128944  992694 us  RTF 0.224795
+[r00/SRAM/2core] run 5: rc=0 frames=415 samples=105984 arena_peak=128944  992701 us  RTF 0.224796
+[r00/SRAM/2core] MEDIAN 992701 us  (min 992688, max 992734, spread 0.005%)
+[r00/SRAM/2core] audio 4.416000 s @ 24000 Hz  ==>  RTF = 0.224796   (4.448 x real time)
+[r00/SRAM/2core] rc=0 frames=415 (fixture 415) samples=105984 (fixture 105984) arena_peak=128944
+[r00/SRAM/2core] CORRELATION = 0.987887  rms_ratio = 0.995239  ==> GATE PASS (0.98)
+[r00/SRAM/2core] int8 matvec residency: SIMD 91538400 MACs / 8969 calls (100.000%), SCALAR 0 MACs / 0 calls (0.000%)
+
+---- PER-STAGE BREAKDOWN, r00/SRAM/2core (profiling ON; totals run high, read the SHARES) ----
+profiled run: rc=0 1000478 us wall
+  stage                      us    share   us/s-audio
+  duration                10745     1.1%         2433
+  acoustic                98603    10.0%        22329
+  embed+stemLN            67483     6.8%        15281
+  trunk dw+LN             66565     6.7%        15074
+  trunk pw int8          120992    12.2%        27399
+  head LN+int8            51474     5.2%        11656
+  spec exp+sincos        248624    25.1%        56301
+  ifft                   273064    27.6%        61835
+  ola+emit+dc             51172     5.2%        11588
+  TOTAL(profiled)        988722   100.0%       223895   (frames 415)
+  -- FLOAT GLUE (already counted inside the stages above) --
+  primitive                  us    share   us/s-audio        calls    ns/call
+  LayerNorm calls         16416     1.7%         3717         2490     6592.8
+  expf calls             118081    11.9%        26739       212065      556.8
+  sincos calls           117836    11.9%        26684       212895      553.5
+  spec complex mul        11110     1.1%         2516       212895       52.2
+  GLUE TOTAL             252333    25.5%        57141   (exp+sincos+LayerNorm)
+
+======== r00/PSRAM :: arena 327680 B in PSRAM (resident false -> SIMD off) (resident=0) ========
+[r00/PSRAM] warm-up: rc=0 frames=415 samples=105984 5075058 us (DISCARDED)
+[r00/PSRAM] run 1: rc=0 frames=415 samples=105984 arena_peak=98864  5075087 us  RTF 1.149250
+[r00/PSRAM] run 2: rc=0 frames=415 samples=105984 arena_peak=98864  5074974 us  RTF 1.149224
+[r00/PSRAM] run 3: rc=0 frames=415 samples=105984 arena_peak=98864  5075021 us  RTF 1.149235
+[r00/PSRAM] run 4: rc=0 frames=415 samples=105984 arena_peak=98864  5074987 us  RTF 1.149227
+[r00/PSRAM] run 5: rc=0 frames=415 samples=105984 arena_peak=98864  5075030 us  RTF 1.149237
+[r00/PSRAM] MEDIAN 5075021 us  (min 5074974, max 5075087, spread 0.002%)
+[r00/PSRAM] audio 4.416000 s @ 24000 Hz  ==>  RTF = 1.149235   (0.870 x real time)
+[r00/PSRAM] rc=0 frames=415 (fixture 415) samples=105984 (fixture 105984) arena_peak=98864
+[r00/PSRAM] CORRELATION = 0.987887  rms_ratio = 0.995239  ==> GATE PASS (0.98)
+[r00/PSRAM] int8 matvec residency: SIMD 0 MACs / 0 calls (0.000%), SCALAR 91445952 MACs / 8960 calls (100.000%)
+
+======== r06/PSRAM :: arena 327680 B in PSRAM (resident false -> SIMD off) (resident=0) ========
+[r06/PSRAM] warm-up: rc=0 frames=629 samples=160768 7680479 us (DISCARDED)
+[r06/PSRAM] run 1: rc=0 frames=629 samples=160768 arena_peak=145936  7680452 us  RTF 1.146564
+[r06/PSRAM] run 2: rc=0 frames=629 samples=160768 arena_peak=145936  7680532 us  RTF 1.146576
+[r06/PSRAM] run 3: rc=0 frames=629 samples=160768 arena_peak=145936  7680571 us  RTF 1.146582
+[r06/PSRAM] run 4: rc=0 frames=629 samples=160768 arena_peak=145936  7680567 us  RTF 1.146581
+[r06/PSRAM] run 5: rc=0 frames=629 samples=160768 arena_peak=145936  7680571 us  RTF 1.146582
+[r06/PSRAM] MEDIAN 7680567 us  (min 7680452, max 7680571, spread 0.002%)
+[r06/PSRAM] audio 6.698667 s @ 24000 Hz  ==>  RTF = 1.146581   (0.872 x real time)
+[r06/PSRAM] rc=0 frames=629 (fixture 629) samples=160768 (fixture 160768) arena_peak=145936
+[r06/PSRAM] CORRELATION = 0.984762  rms_ratio = 1.000581  ==> GATE PASS (0.98)
+[r06/PSRAM] int8 matvec residency: SIMD 0 MACs / 0 calls (0.000%), SCALAR 138277248 MACs / 13521 calls (100.000%)
+
+======== r06/SRAM/2core :: arena 204800 B in INTERNAL SRAM (resident=1) ========
+[r06/SRAM/2core] warm-up: rc=0 frames=629 samples=160768 1491241 us (DISCARDED)
+[r06/SRAM/2core] run 1: rc=0 frames=629 samples=160768 arena_peak=171008  1491227 us  RTF 0.222615
+[r06/SRAM/2core] run 2: rc=0 frames=629 samples=160768 arena_peak=171008  1491166 us  RTF 0.222606
+[r06/SRAM/2core] run 3: rc=0 frames=629 samples=160768 arena_peak=171008  1491173 us  RTF 0.222607
+[r06/SRAM/2core] run 4: rc=0 frames=629 samples=160768 arena_peak=171008  1491229 us  RTF 0.222616
+[r06/SRAM/2core] run 5: rc=0 frames=629 samples=160768 arena_peak=171008  1491209 us  RTF 0.222613
+[r06/SRAM/2core] MEDIAN 1491209 us  (min 1491166, max 1491229, spread 0.004%)
+[r06/SRAM/2core] audio 6.698667 s @ 24000 Hz  ==>  RTF = 0.222613   (4.492 x real time)
+[r06/SRAM/2core] rc=0 frames=629 (fixture 629) samples=160768 (fixture 160768) arena_peak=171008
+[r06/SRAM/2core] CORRELATION = 0.984762  rms_ratio = 1.000581  ==> GATE PASS (0.98)
+[r06/SRAM/2core] int8 matvec residency: SIMD 138461152 MACs / 13541 calls (100.000%), SCALAR 0 MACs / 0 calls (0.000%)
+
+---- PER-STAGE BREAKDOWN, r06/SRAM/2core (profiling ON; totals run high, read the SHARES) ----
+profiled run: rc=0 1502979 us wall
+  stage                      us    share   us/s-audio
+  duration                14409     1.0%         2151
+  acoustic               143807     9.7%        21468
+  embed+stemLN           100757     6.8%        15041
+  trunk dw+LN            100707     6.8%        15034
+  trunk pw int8          183155    12.3%        27342
+  head LN+int8            77673     5.2%        11595
+  spec exp+sincos        376826    25.3%        56254
+  ifft                   413904    27.8%        61789
+  ola+emit+dc             77417     5.2%        11557
+  TOTAL(profiled)       1488655   100.0%       222232   (frames 629)
+  -- FLOAT GLUE (already counted inside the stages above) --
+  primitive                  us    share   us/s-audio        calls    ns/call
+  LayerNorm calls         24876     1.7%         3714         3774     6591.4
+  expf calls             179028    12.0%        26726       321419      557.0
+  sincos calls           178584    12.0%        26660       322677      553.4
+  spec complex mul        16798     1.1%         2508       322677       52.1
+  GLUE TOTAL             382488    25.7%        57099   (exp+sincos+LayerNorm)
+
+---- SUMMARY ----
+r00 SRAM  corr 0.987887   (host fastmath r00 = 0.987887)
+r00 PSRAM corr 0.987887
+r06 PSRAM corr 0.984762
+r06 SRAM  corr 0.984762   (host fastmath r06 = 0.984762 = host MIN)
+
+counts/s-audio at 93.75 fps: exp 47906.250, sincos(2 trig ea) 48093.750, LayerNorm 562.500
+
+RESULT: components OK, correlation PASS
+================ END ================

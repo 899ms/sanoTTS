@@ -68,6 +68,16 @@ esp32c3/test/emu_out/
 # Host build products. Source files with similar names remain tracked.
 /mcu/snt_golden_test
 /mcu/snt_test_*
+/mcu/snt_nano_golden_test
+/mcu/snt_nano_bench
+/mcu/snt_nano_bench_prof
+/mcu/snt_r7_bench
+/mcu/snt_nano_glue_bench
+/mcu/snt_nano_fastmath_test
+/mcu/snt_front_dump_test
+/mcu/piperlite_golden_test
+/mcu/piperlite_q8_golden_test
+/mcu/front_golden_test
 /esp32c3/fsd/fsd_e2e_fast
 /esp32c3/fsd/fsd_e2e_frozen
 /esp32c3/fsd/fsd_e2e_full

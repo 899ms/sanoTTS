@@ -168,12 +168,15 @@
   <div class="cta-wrap"><a class="cta" href="#live">▶ Synthesize live — type anything, pick a voice</a></div>
 
   <ul class="hl">
-    <li>smallest neural TTS family known &mdash; <b>745k to 1.8M parameters</b></li>
+    <li>smallest neural TTS family known &mdash; <b>294k to 2.3M parameters</b></li>
     <li>runs <b>real-time</b> on a <b>$3 microcontroller</b> (ESP32-S3)</li>
     <li>runs right in your browser &mdash; <b>WebAssembly</b>, no server</li>
     <li>under <b>4&nbsp;MB</b> per voice, zero dependencies (espeak-ng phonemizer included)</li>
-    <li><b>9 voices</b> across <b>6 languages</b> &mdash; English, Nepali (नेपाली), Hindi (हिन्दी),
+    <li><b>11 voices</b> across <b>6 languages</b> &mdash; English, Nepali (नेपाली), Hindi (हिन्दी),
       Vietnamese (Tiếng Việt), Indonesian (Bahasa), Chinese (中文) &mdash; all synthesizing live on this page</li>
+    <li><b>new:</b> <b>heart</b>, our best-sounding voice at <b>2.27M parameters</b> and 24&nbsp;kHz, and
+      <b>heart-nano</b>, the same voice squeezed into <b>294k parameters</b> &mdash; a complete
+      text-to-speech stack, int8, in 337&nbsp;KB. Both synthesize live below</li>
     <li><b>new, experimental:</b> <b>trellis</b> &mdash; a whole new architecture that fits a
       complete voice in <b>under 1M parameters</b> and runs about <b>5&times; faster</b> in the
       browser than our 1.4M&ndash;1.8M voices. It synthesizes live below too &mdash; a research
@@ -185,13 +188,13 @@
 
   <h2>Hear the voices</h2>
   <p class="note">One fresh sentence per voice, rendered by the models themselves.
-  <b>745k to 1.8M parameters</b> — every voice fits in a few megabytes.</p>
+  <b>294k to 2.3M parameters</b> — every voice fits in a few megabytes, the smallest in a third of one.</p>
 
   <table class="vtable">
     <thead><tr><th>Language</th><th>Voice</th><th>Listen</th></tr></thead>
     <tbody>
       <tr class="lang-first">
-        <td class="lang-cell" rowspan="6">English 🇺🇸</td>
+        <td class="lang-cell" rowspan="8">English 🇺🇸</td>
         <td class="voices-cell"><div class="vrow"><span class="vname">amy</span><span class="vparams">1.46M params</span> <span class="pill">SCOREQ 4.13</span></div></td>
         <td class="listen-cell"><audio controls preload="none" src="samples-release/english-amy-1.mp3" title="Welcome! This entire voice runs in under four megabytes, with no cloud at all."></audio></td>
       </tr>
@@ -208,9 +211,19 @@
         <td class="listen-cell"><audio controls preload="none" src="samples-release/english-amy-small-1.mp3" title="Welcome! This entire voice runs in under four megabytes, with no cloud at all."></audio></td>
       </tr>
       <tr>
+        <td class="voices-cell"><div class="vrow"><span class="vname">heart</span><span class="vparams">2.27M params</span> <span class="pill">SCOREQ 3.51</span> <span class="pill ghost">24 kHz</span>
+          <span class="vnote">a different recipe from the voices above: a mel-100 acoustic model feeding a noise-shaping decoder, at 24&nbsp;kHz instead of 22.05. Scored on the same 24 sentences as the rest of this table. It synthesizes your text live below, running the exact float model (correlation 1.000000 against the training-side output on our golden set).</span></div></td>
+        <td class="listen-cell"><audio controls preload="none" src="samples-release/english-heart-1.mp3" title="Welcome! This entire voice runs in under four megabytes, with no cloud at all."></audio></td>
+      </tr>
+      <tr>
         <td class="voices-cell"><div class="vrow"><span class="vname">trellis</span><span class="vparams">995k params</span> <span class="pill ghost">research preview</span>
           <span class="vnote">a new low-rank factorized architecture: an entire text-to-wave stack in under one million parameters at 24&nbsp;kHz, and the quickest of our full-size browser voices. Honest caveat — in our own blind listening test <i>amy</i> above still wins, so treat this as a look at where the family is heading rather than our best voice today. It synthesizes your text live below.</span></div></td>
         <td class="listen-cell"><audio controls preload="none" src="samples-release/english-trellis-1.mp3" title="Welcome! This entire voice runs in under four megabytes, with no cloud at all."></audio></td>
+      </tr>
+      <tr>
+        <td class="voices-cell"><div class="vrow"><span class="vname">heart-nano</span><span class="vparams">294k params</span> <span class="pill">SCOREQ 2.30</span> <span class="pill mute">int8 · 337 KB</span>
+          <span class="vnote">the smallest complete neural text-to-speech stack we have built: duration, acoustic and decoder in 294,279 parameters, int8, 24&nbsp;kHz. Clearly intelligible, clearly not as clean as the voices above &mdash; you can hear what a tenth of a megabyte buys. What plays below is the same int8 arithmetic a microcontroller would run.</span></div></td>
+        <td class="listen-cell"><audio controls preload="none" src="samples-release/english-heartnano-1.mp3" title="Welcome! This entire voice runs in under four megabytes, with no cloud at all."></audio></td>
       </tr>
       <tr>
         <td class="voices-cell"><div class="vrow"><span class="vname">robot (on-device)</span><span class="vparams">745k params</span> <span class="pill mute">int8 · on-chip</span>
@@ -255,7 +268,7 @@
      text-transform:uppercase"><b>Size comparison (parameters)</b></p>
   <svg viewBox="0 0 640 270" font-family="Lucida Console, Monaco, monospace" font-size="11"
        style="width:100%;max-width:640px;height:auto;display:block;margin:0 auto"
-       role="img" aria-label="Horizontal bar chart of parameter count on a linear axis from 0 to 85 million. The sanoTTS family, 0.75 to 1.8 million parameters across 9 voices, and TinyTTS at 1.62 million are tiny slivers; Inflect Nano at 4.63 million is a short bar; Kokoro at 82 million fills nearly the whole axis. sanoTTS is highlighted in crimson.">
+       role="img" aria-label="Horizontal bar chart of parameter count on a linear axis from 0 to 85 million. The sanoTTS family, 0.29 to 2.27 million parameters across 11 voices, and TinyTTS at 1.62 million are tiny slivers; Inflect Nano at 4.63 million is a short bar; Kokoro at 82 million fills nearly the whole axis. sanoTTS is highlighted in crimson.">
     <title>Size comparison (parameters)</title>
     <!-- gridlines: linear axis 0 to 85M, plot x 145..620 -->
     <line x1="145"   y1="20" x2="145"   y2="228" stroke="#ccc" stroke-width="1"/>
@@ -271,12 +284,12 @@
     <text x="592.1" y="245" text-anchor="middle" fill="#666" font-size="10">80M</text>
     <text x="382" y="263" text-anchor="middle" fill="#888" font-size="10">parameters &#8212; linear axis, so the sliver IS the point</text>
 
-    <!-- sanoTTS family: darker crimson 0..0.75M (smallest voice), crimson to 1.8M (largest) -->
-    <text x="135" y="39" text-anchor="end" fill="#111" font-weight="bold" font-size="12">sanoTTS (9 voices)</text>
-    <text x="135" y="53" text-anchor="end" fill="#666" font-size="10">0.75M&#8211;1.8M params</text>
-    <rect x="145" y="30" width="10.3" height="20" fill="#DC143C"><title>sanoTTS family: largest voice hfc, 1.83M params</title></rect>
-    <rect x="145" y="30" width="4.2" height="20" fill="#8B0A26"><title>sanoTTS family: smallest voice, 745k params (the on-device model)</title></rect>
-    <text x="161" y="44" fill="#DC143C" font-weight="bold">0.75M&#8211;1.8M</text>
+    <!-- sanoTTS family: darker crimson 0..0.29M (smallest voice), crimson to 2.27M (largest); 5.588 px per million -->
+    <text x="135" y="39" text-anchor="end" fill="#111" font-weight="bold" font-size="12">sanoTTS (11 voices)</text>
+    <text x="135" y="53" text-anchor="end" fill="#666" font-size="10">0.29M&#8211;2.27M params</text>
+    <rect x="145" y="30" width="12.7" height="20" fill="#DC143C"><title>sanoTTS family: largest voice heart, 2.27M params</title></rect>
+    <rect x="145" y="30" width="1.6" height="20" fill="#8B0A26"><title>sanoTTS family: smallest voice heart-nano, 294k params</title></rect>
+    <text x="163" y="44" fill="#DC143C" font-weight="bold">0.29M&#8211;2.27M</text>
 
     <!-- TinyTTS 1.62M -->
     <text x="135" y="92" text-anchor="end" fill="#111" font-weight="bold" font-size="13">TinyTTS</text>
@@ -297,9 +310,9 @@
     <text x="609" y="203" fill="#666">82M</text>
   </svg>
   <p style="text-align:center;margin:14px 0 6px">Kokoro is
-    <span style="color:var(--accent);font-weight:bold;font-size:30px;vertical-align:-2px">45&times;</span>
+    <span style="color:var(--accent);font-weight:bold;font-size:30px;vertical-align:-2px">36&times;</span>
     larger than our largest voice &mdash; and
-    <span style="color:var(--accent);font-weight:bold;font-size:30px;vertical-align:-2px">110&times;</span>
+    <span style="color:var(--accent);font-weight:bold;font-size:30px;vertical-align:-2px">279&times;</span>
     larger than our smallest.</p>
   <p class="note" style="text-align:center">Shipped-file sizes: sanoTTS amy 2.8&nbsp;MB fp16 and TinyTTS
   3.5&nbsp;MB fp16, both verified from the released files; Kokoro's ~330&nbsp;MB fp32 is its widely cited
@@ -311,6 +324,7 @@
       <tr>
         <th></th>
         <th>sanoTTS amy<span class="sub">1.46M params</span></th>
+        <th>sanoTTS heart<span class="sub">2.27M params</span></th>
         <th>TinyTTS<span class="sub">1.62M params</span></th>
         <th>Inflect Nano<span class="sub">4.63M params</span></th>
       </tr>
@@ -318,21 +332,23 @@
     <tbody>
       <tr>
         <td>SCOREQ</td>
-        <td class="best">4.13</td><td>3.94</td><td>3.81</td>
+        <td class="best">4.13</td><td>3.51</td><td>3.94</td><td>3.81</td>
       </tr>
       <tr>
         <td>UTMOS</td>
-        <td class="best">4.10</td><td>3.65</td><td>3.65</td>
+        <td class="best">4.10</td><td>3.42</td><td>3.65</td><td>3.65</td>
       </tr>
       <tr>
         <td>DNSMOS-SIG</td>
-        <td>3.61</td><td class="best">3.62</td><td>3.58</td>
+        <td>3.61</td><td>3.50</td><td class="best">3.62</td><td>3.58</td>
       </tr>
     </tbody>
   </table>
   <p class="note">Same 24-sentence set, three independent no-reference metrics; best value per row in
-  crimson. sanoTTS leads on SCOREQ and UTMOS; on DNSMOS-SIG TinyTTS edges us by 0.01 &mdash; no single
-  metric tells the whole story.</p>
+  crimson. sanoTTS amy leads on SCOREQ and UTMOS; on DNSMOS-SIG TinyTTS edges us by 0.01 &mdash; no single
+  metric tells the whole story. <i>heart</i> is a different voice and recipe (24&nbsp;kHz, noise-shaping
+  decoder) scored on the identical 24 sentences; <i>heart-nano</i>, its 294k sibling, scores
+  2.30 / 2.45 / 3.35 on the same three metrics.</p>
 
   <p class="lead" style="margin:32px 0 6px"><b>The size-quality frontier we traced</b></p>
   <svg viewBox="0 0 640 260" font-family="Lucida Console, Monaco, monospace" font-size="11"
@@ -393,7 +409,10 @@
   <div id="log"></div>
   <p class="note" style="margin-top:16px">The speed shown is <b>this browser on your CPU</b> &mdash;
   the on-device English voice runs at 0.22&times; real time on an ESP32-S3. Every mascot above
-  (marked &#9679;) synthesizes your typed text live, right here, with no server involved.</p>
+  (marked &#9679;) synthesizes your typed text live, right here, with no server involved.
+  <i>heart</i> and <i>heart-nano</i> take a different route from text to sound than the other
+  voices (a 100-band mel interface into a noise-shaping decoder), so they load their own small
+  runtime; <i>heart-nano</i> runs the int8 arithmetic of the microcontroller build unchanged.</p>
 
   <hr>
 
@@ -408,6 +427,8 @@
 <script src="snt_voice.js?v=20260819"></script>
 <script src="snt_trellis.js?v=20260819"></script>
 <script src="trellis_frontend.js?v=20260819"></script>
+<script src="snt_nano_heart.js?v=20260902"></script>
+<script src="snt_nano_heartnano.js?v=20260902"></script>
 <script>
 // ARENA: the esp32 build lives inside 320KB SRAM, but the browser has no such
 // budget -- 2MB covers paragraph-length chunks (320KB OOMs past ~100 ids).
@@ -439,6 +460,17 @@ const VOICES = [
   // runs through SaanoTrellis rather than SaanoVoice. Marked `trellis:true`.
   {key:"trellis",  label:"trellis",    params:"995k",  flag:"\uD83C\uDDFA\uD83C\uDDF8", live:true, emj:"\uD83D\uDD78\uFE0F",
     trellis:true},
+  // The mel-100 lineage (snt_nano runtime): the same character-level Misaki
+  // phoneme contract as trellis (identical 62-symbol vocabulary, verified
+  // against the corpus vocab), a different network behind it. One wasm
+  // module per voice because the runtime bakes the model's shapes in at
+  // compile time. `heart` ships float32 weights (the int8 form of this
+  // stack fails the 0.98 golden gate at 0.951); `heartnano` ships the int8
+  // blobs and int8 math of the device build, unchanged.
+  {key:"heart",    label:"heart",      params:"2.27M", flag:"\uD83C\uDDFA\uD83C\uDDF8", live:true, emj:"\u2764\uFE0F",
+    nano:true},
+  {key:"heartnano",label:"heart-nano", params:"294k",  flag:"\uD83C\uDDFA\uD83C\uDDF8", live:true, emj:"\uD83D\uDC95",
+    nano:true},
 ];
 let voice = VOICES[0];
 // Native default sentence per voice, swapped into the textarea on every mascot
@@ -450,6 +482,8 @@ const DEFAULT_TEXT = {
   kristin: "Hello! I am a tiny voice living in your browser.",
   hfc:     "Hello! I am a tiny voice living in your browser.",
   trellis: "Hello! I am a tiny voice living in your browser.",
+  heart:   "Hello! I am a tiny voice living in your browser.",
+  heartnano: "Hello! I am a tiny voice living in your browser.",
   vietnamese: "Xin chào! Hôm nay trời đẹp quá.",
   indonesian: "Selamat pagi! Hari ini cuaca sangat cerah.",
   nepali:  "नमस्ते! आज मौसम धेरै राम्रो छ।",
@@ -483,6 +517,7 @@ function renderMascots() {
       // "Synthesize" doesn't pay the network round-trip; synth() awaits the
       // same cached promise if the prefetch hasn't resolved yet.
       if (v.trellis) loadTrellisBundle().catch(e => log("prefetch trellis: " + (e && e.message || e)));
+      else if (v.nano) loadNanoBundle(v.key).catch(e => log("prefetch " + v.key + ": " + (e && e.message || e)));
       else if (v.key !== "mcu") loadVoiceBundle(v.key).catch(e => log("prefetch " + v.key + ": " + (e && e.message || e)));
     };
     box.appendChild(b);
@@ -496,6 +531,10 @@ function updateUI() {
 let Mod=null, G2P=null, Voice=null, Trellis=null, audioCtx=null, lastPcm=null, mcuAssets=null;
 const voiceBundles = new Map(); // key -> Promise<{meta,front,dec}>
 let trellisBundle=null, trellisFrontend=null;
+// snt_nano voices: one module per voice (SaanoNanoHeart, SaanoNanoHeartNano)
+const NANO_MODULES = {};        // key -> instantiated Emscripten module
+const nanoBundles = new Map();  // key -> Promise<{meta,front,dec}>
+const NANO_ARENA = 16*1024*1024, NANO_OUT_CAP = 24000*30;
 
 async function fetchBytes(url){ const r=await fetch(url);
   if(!r.ok) throw new Error("fetch "+url+": "+r.status); return new Uint8Array(await r.arrayBuffer()); }
@@ -542,6 +581,63 @@ function loadVoiceBundle(key, onProgress){
     })());
   }
   return voiceBundles.get(key);
+}
+
+// A snt_nano voice ships as front + decoder blobs whose element type is in
+// meta.json ("weights": "f32" | "int8"), plus the module that was compiled
+// against that exact export (meta.export_name).
+function loadNanoBundle(key, onProgress){
+  if(!nanoBundles.has(key)){
+    const dir = "voices/" + key + "/";
+    nanoBundles.set(key, (async () => {
+      if(onProgress) onProgress("downloading " + key + " voice model…");
+      const t0 = performance.now();
+      const meta = await fetchJson(dir + "meta.json");
+      const [front, dec] = await Promise.all([fetchBytes(dir + meta.front), fetchBytes(dir + meta.dec)]);
+      if(front.length !== meta.front_bytes || dec.length !== meta.dec_bytes)
+        throw new Error(key + ": blob sizes " + front.length + "/" + dec.length +
+                        " do not match meta.json " + meta.front_bytes + "/" + meta.dec_bytes);
+      const mb = ((front.length + dec.length) / 1048576).toFixed(1);
+      if(onProgress) onProgress("model loaded: " + mb + " MB in " +
+        ((performance.now() - t0) / 1000).toFixed(2) + " s");
+      return {meta, front, dec};
+    })());
+  }
+  return nanoBundles.get(key);
+}
+async function synthNano(key, text){
+  const bundle = await loadNanoBundle(key);
+  const N = NANO_MODULES[key];
+  if(!N) throw new Error(bundle.meta.export_name + " did not load");
+  const fmt = N._snt_nano_wasm_weight_format();
+  if((fmt === 1) !== (bundle.meta.weights === "f32"))
+    throw new Error(key + ": module weight format " + fmt + " does not match meta.json " + bundle.meta.weights);
+  if(!trellisFrontend){
+    if(!self.SaanoTrellisFrontend) throw new Error("trellis_frontend.js did not load");
+    trellisFrontend = self.SaanoTrellisFrontend.createFrontend({module:G2P});
+  }
+  const {ids} = trellisFrontend.textToIds(text);   // plain Array, see synthTrellis
+  const ids32 = Int32Array.from(ids);
+  // decoder-noise seed: sha256(text)[:8], the renderer's own convention
+  const tn = N.lengthBytesUTF8(text) + 1;
+  const tp = N._malloc(tn); N.stringToUTF8(text, tp, tn);
+  const sp = N._malloc(8);
+  const frontP=toHeap(N,bundle.front), decP=toHeap(N,bundle.dec);
+  const idsP=toHeap(N,new Uint8Array(ids32.buffer,0,ids32.length*4));
+  const arenaP=N._malloc(NANO_ARENA), outP=N._malloc(NANO_OUT_CAP*4);
+  let pcm=null, wall=0, n=0;
+  try{
+    if(N._snt_nano_wasm_seed_from_text(tp, sp) !== 0) throw new Error("seed derivation failed");
+    const lo = N.HEAPU32[sp>>2], hi = N.HEAPU32[(sp>>2)+1];
+    const t0=performance.now();
+    n=N._snt_nano_wasm_synthesize(frontP,decP,idsP,ids32.length,0,lo,hi,arenaP,NANO_ARENA,outP,NANO_OUT_CAP);
+    wall=(performance.now()-t0)/1000;
+    if(n<0) throw new Error(key + " synthesis failed, code " + n + " (core " + N._snt_nano_wasm_last_rc() + ")");
+    pcm=new Float32Array(n); pcm.set(N.HEAPF32.subarray(outP>>2,(outP>>2)+n));
+  } finally {
+    [tp,sp,frontP,decP,idsP,arenaP,outP].forEach(p=>N._free(p));
+  }
+  return {pcm, ids, wall, sr:N._snt_nano_wasm_sample_rate()||bundle.meta.sample_rate};
 }
 
 // Split text into per-sentence chunks so playback can start after the first
@@ -701,11 +797,13 @@ async function synth(){
     // model download/load feedback (cached bundles resolve instantly)
     if (voice.key === "mcu") { setState("loading model\u2026"); await uiBreath(); await loadMcuAssets(); }
     else if (voice.trellis) await loadTrellisBundle(m => { setState(m); log(m); });
+    else if (voice.nano) await loadNanoBundle(voice.key, m => { setState(m); log(m); });
     else await loadVoiceBundle(voice.key, m => { setState(m); log(m); });
     await uiBreath();
 
     const chunks = splitChunks(text);
     const doChunk = t => voice.trellis ? synthTrellis(t)
+                       : voice.nano ? synthNano(voice.key, t)
                        : voice.key==="mcu" ? synthMcu(t) : synthVoice(voice.key, t);
     let player=null, ttfu=null, totalIds=0, totalWall=0;
     const pcms=[];
@@ -739,8 +837,8 @@ async function synth(){
 }
 let lastSr = SR;
 renderMascots(); updateUI();
-Promise.all([SaanoTTS(), SaanoG2P(), SaanoVoice(), SaanoTrellis()]).then(([m,g,v,t])=>{
-  Mod=m; G2P=g; Voice=v; Trellis=t;
+Promise.all([SaanoTTS(), SaanoG2P(), SaanoVoice(), SaanoTrellis(), SaanoNanoHeart(), SaanoNanoHeartNano()]).then(([m,g,v,t,nh,nn])=>{
+  Mod=m; G2P=g; Voice=v; Trellis=t; NANO_MODULES.heart=nh; NANO_MODULES.heartnano=nn;
   const rc=G2P._snt_g2p_init ? G2P._snt_g2p_init() : 0;
   $("state").textContent="ready.";
   $("go").disabled=false;

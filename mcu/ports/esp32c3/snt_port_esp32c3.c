@@ -6,6 +6,23 @@
 #include "esp_timer.h"
 #include "snt_port.h"
 
+/* Operand residency accounting.
+ *
+ * READ THIS BEFORE COMPARING THE NUMBER TO THE S3'S. On the S3 these counters
+ * separate SIMD MACs from scalar MACs, because the PIE kernels only dispatch
+ * on SRAM-resident weights. RV32IMC HAS NO VECTOR UNIT, so on the C3 BOTH
+ * branches are the same scalar loop and the split here measures something
+ * else: how many MACs read their weights from SRAM versus from flash XIP.
+ * That is still worth measuring -- a flash-cache miss on a random weight row
+ * is not free -- but it is not a SIMD dispatch rate and must not be reported
+ * as one. */
+int64_t g_mv_macs_resident, g_mv_macs_flash;
+int64_t g_mv_calls_resident, g_mv_calls_flash;
+void snt_port_res_reset(void) {
+    g_mv_macs_resident = g_mv_macs_flash = 0;
+    g_mv_calls_resident = g_mv_calls_flash = 0;
+}
+
 int32_t snt_dot_s8(const int8_t *a, const int8_t *b, int len) {
     int32_t acc = 0;
     /* 4x unroll: RV32IMC has no SIMD; keep the loop tight for the C3 */
@@ -19,6 +36,11 @@ int32_t snt_dot_s8(const int8_t *a, const int8_t *b, int len) {
 
 void snt_matvec_s8(const int8_t *act, const int8_t *w, int32_t *out,
                    int rows, int len) {
+    if (snt_weights_resident(w)) {
+        g_mv_calls_resident++; g_mv_macs_resident += (int64_t)rows * len;
+    } else {
+        g_mv_calls_flash++; g_mv_macs_flash += (int64_t)rows * len;
+    }
     for (int r = 0; r < rows; r++)
         out[r] = snt_dot_s8(act, w + (long)r * len, len);
 }
@@ -41,6 +63,8 @@ void snt_matvec_s16s8(const int16_t *act, const int8_t *w, int32_t *out,
     for (int r = 0; r < rows; r++)
         out[r] = snt_dot_s16s8(act, w + (long)r * len, len);
 }
+
+int snt_weights_resident(const void *p);
 
 int snt_weights_resident(const void *p) {
     uint32_t a = (uint32_t)p;

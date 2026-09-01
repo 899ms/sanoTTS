@@ -1,18 +1,21 @@
 # sanoTTS — a tiny neural voice that runs anywhere
 
 ***sano*** (सानो) — Nepali for **"small."** A family of tiny neural text-to-speech
-voices — **745k to 1.8M parameters** — that run with **no cloud and no NPU**:
+voices — **294k to 2.3M parameters** — that run with **no cloud and no NPU**:
 real-time on a ~$3 ESP32-S3 (out a GPIO into an LM386 and a speaker), or live
 in the browser via WASM.
 
 ![sanoTTS — nine tiny voices, six languages, browser + $3 chip](docs/assets/saanotts-hero-v2.png)
 
-- smallest neural TTS family known — **745k to 1.8M parameters**
+- smallest neural TTS family known — **294k to 2.3M parameters**
 - runs **real-time** on a **$3 microcontroller** (ESP32-S3)
 - runs right in your browser — **WebAssembly**, no server
 - under **4 MB** per voice, zero dependencies (espeak-ng phonemizer included)
-- **9 voices** across **6 languages** — English, Nepali (नेपाली), Hindi (हिन्दी),
+- **11 voices** across **6 languages** — English, Nepali (नेपाली), Hindi (हिन्दी),
   Vietnamese (Tiếng Việt), Indonesian (Bahasa), Chinese (中文)
+- **new:** **heart**, our best-sounding voice at **2.27M parameters** (24 kHz), and
+  **heart-nano**, the same voice in **294k parameters** — a complete text-to-speech
+  stack, int8, in 337 KB. Both synthesize live in the browser demo
 - open source, **GPL-3.0**
 
 ## Live demo
@@ -142,7 +145,8 @@ exclude the shared external G2P.
 
 ![Size comparison: sanoTTS 0.75M-1.8M params vs TinyTTS 1.62M vs Inflect Nano 4.63M vs Kokoro 82M, linear axis](docs/assets/chart-size-comparison.svg)
 
-Kokoro is 45x larger than our largest voice, and 110x larger than our smallest.
+Kokoro is 36x larger than our largest voice (heart, 2.27M), and 279x larger than
+our smallest (heart-nano, 294k).
 Shipped-file sizes: sanoTTS amy 2.8 MB fp16 and TinyTTS 3.5 MB fp16, both
 verified from the released files; Kokoro's ~330 MB fp32 is its widely cited
 public figure.
@@ -150,6 +154,8 @@ public figure.
 | System | Params | SCOREQ | UTMOS | DNS-SIG |
 | --- | ---: | :---: | :---: | :---: |
 | **sanoTTS (amy)** | **1.46 M** | **4.13** | **4.10** | 3.61 |
+| sanoTTS (heart) | 2.27 M | 3.51 | 3.42 | 3.50 |
+| sanoTTS (heart-nano) | 0.29 M | 2.30 | 2.45 | 3.35 |
 | TinyTTS | 1.62 M | 3.94 | 3.65 | **3.62** |
 | Inflect Nano | 4.63 M | 3.81 | 3.65 | 3.58 |
 | Kitten TTS nano | 15 M | 3.02 | 3.58 | 3.43 |
@@ -179,6 +185,8 @@ SCOREQ from 3.70 to 4.16.
 | | kristin | 1.40 M | 4.09 |
 | | hfc | 1.83 M | 3.94 |
 | | amy-small | 1.08 M | 3.70 |
+| | heart (24 kHz) | 2.27 M | 3.51 |
+| | heart-nano (int8, 24 kHz) | 294 k | 2.30 |
 | | robot (on-device, int8) | 745 k | — |
 | Nepali नेपाली | Nepali | 1.47 M | — |
 | Hindi हिन्दी | Hindi | 1.50 M | — |
@@ -191,6 +199,18 @@ bit-exact with the chip's own output. SCOREQ is only reported for the English
 voices, which share a common eval set; the other languages haven't been scored
 against a comparable reference yet.
 
+`heart` and `heart-nano` are a second recipe: a 100-band mel interface between
+the acoustic model and a noise-shaping ConvNeXt + iSTFT decoder, at 24 kHz.
+`heart-nano` is the smallest complete neural TTS stack we have built —
+duration 22,858 + acoustic 65,299 + decoder 206,122 = 294,279 parameters, shipped
+as 337 KB of int8 blobs (`web/voices/heartnano/`) and run in the browser with the
+int8 arithmetic of the microcontroller build unchanged (`mcu/src/snt_nano.c`,
+golden fixture `mcu/test/fixtures/en_us_e13b`). `heart` ships float32 weights
+(`web/voices/heart/`, 9.1 MB): its int8 form fails the 0.98 golden gate at 0.951
+minimum correlation, the float build reproduces the training-side output at
+1.000000 (`mcu/test/fixtures/en_us_r227f32`). Rebuild both with
+`mcu/ports/wasm/build_nano.sh`, gate with `mcu/ports/wasm/verify_nano_node.mjs`.
+
 ## How it works
 
 ![text → duration → acoustic → decoder → audio](docs/assets/saanotts-signal-path.png)
@@ -200,7 +220,8 @@ model predicts generator latents; a decoder renders 22 kHz audio.
 The web voices (amy, kristin, hfc, and the other languages) use a compact
 time-domain decoder running in fp32 WASM; the 745k on-device model instead uses
 a quantized int8 iSTFT decoder, sized to fit and run in real time on the
-ESP32-S3.
+ESP32-S3. `heart` / `heart-nano` predict a 100-band mel spectrogram and render it
+with a noise-fed ConvNeXt + iSTFT decoder at 24 kHz (`mcu/src/snt_nano.c`).
 
 ## Train your own voice
 

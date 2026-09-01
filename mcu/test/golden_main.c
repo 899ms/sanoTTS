@@ -61,7 +61,13 @@ int main(int argc, char **argv) {
     printf("frames %d samples %d elapsed %lld us\n", st.frames, st.samples,
            (long long)st.elapsed_us);
     printf("golden corr %.6f (%zu samples)\n", cr, sink.pos);
-    int pass = (rc == 0 && cr > 0.98);
+    /* Correlation is scale-invariant, so it cannot see a gain error: a build
+     * of this graph with a defective integer iFFT scored corr 0.989 while
+     * emitting samples ~500x hot (measured 2026-08-23). Gate the RMS ratio
+     * too. Bounds 0.8-1.25: the shipped float build measures 0.935. */
+    double rms_ratio = sqrt((sink.saa + 1e-30) / (sink.sbb + 1e-30));
+    printf("golden rms_ratio %.6f (bound 0.80-1.25)\n", rms_ratio);
+    int pass = (rc == 0 && cr > 0.98 && rms_ratio > 0.80 && rms_ratio < 1.25);
     printf(pass ? "PASS\n" : "FAIL\n");
     return pass ? 0 : 1;
 }

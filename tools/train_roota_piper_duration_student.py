@@ -117,6 +117,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--pack-dir", type=Path, default=DEFAULT_TRAIN_PACK)
     parser.add_argument("--eval-pack-dir", type=Path, default=DEFAULT_EVAL_PACK)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
+    parser.add_argument(
+        "--initial-checkpoint",
+        type=Path,
+        help="Strictly initialize from a topology-compatible duration checkpoint.",
+    )
     parser.add_argument("--steps", type=int, default=4000)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--hidden", type=int, default=64)
@@ -171,9 +176,35 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--grad-clip", type=float, default=5.0)
     parser.add_argument("--log-interval", type=int, default=100)
     parser.add_argument("--save-interval", type=int, default=1000)
+    parser.add_argument(
+        "--checkpoint-steps",
+        default="",
+        help="Optional ascending comma-separated checkpoint steps; may include 0.",
+    )
+    parser.add_argument(
+        "--eval-max-rows",
+        type=int,
+        default=0,
+        help="Restrict held-out duration evaluation to the first N rows (0 = all).",
+    )
     parser.add_argument("--seed", type=int, default=6262)
     parser.add_argument("--device", choices=("auto", "cpu", "cuda", "mps"), default="auto")
     parser.add_argument("--max-duration", type=int, default=80)
+    parser.add_argument(
+        "--duration-vocab-size",
+        type=int,
+        default=0,
+        help=(
+            "Force the learned duration embedding vocabulary size. Zero infers it from the packs. "
+            "When positive, source IDs outside the vocabulary are mapped to --duration-oov-id."
+        ),
+    )
+    parser.add_argument(
+        "--duration-oov-id",
+        type=int,
+        default=59,
+        help="Fallback duration ID for source IDs outside --duration-vocab-size (Kristin uses schwa=59).",
+    )
     return parser.parse_args()
 
 
@@ -271,6 +302,8 @@ def load_samples(
     pause_token_ids: tuple[int, ...] = DEFAULT_PAUSE_TOKEN_IDS,
     long_preserve_threshold: float = 0.0,
     long_preserve_scale: float = 0.0,
+    duration_vocab_size: int = 0,
+    duration_oov_id: int = 59,
 ) -> tuple[list[dict[str, Any]], list[DurationSample], int, int]:
     if not math.isfinite(target_duration_scale) or target_duration_scale <= 0.0:
         raise ValueError(f"target_duration_scale must be finite and positive, got {target_duration_scale}")
@@ -282,6 +315,13 @@ def load_samples(
         raise ValueError(f"long_preserve_threshold must be finite and non-negative, got {long_preserve_threshold}")
     if not math.isfinite(long_preserve_scale) or long_preserve_scale < 0.0:
         raise ValueError(f"long_preserve_scale must be finite and non-negative, got {long_preserve_scale}")
+    if duration_vocab_size < 0:
+        raise ValueError(f"duration_vocab_size must be non-negative, got {duration_vocab_size}")
+    if duration_vocab_size > 0 and not (0 <= duration_oov_id < duration_vocab_size):
+        raise ValueError(
+            f"duration_oov_id must be in [0, {duration_vocab_size}) when a duration vocabulary is forced, "
+            f"got {duration_oov_id}"
+        )
     require_dir(pack_dir, "pack directory")
     rows = read_json(pack_dir / "rows.json")
     if not isinstance(rows, list) or not rows:
@@ -315,6 +355,12 @@ def load_samples(
                     long_preserve_threshold=long_preserve_threshold,
                     long_preserve_scale=long_preserve_scale,
                 )
+                if duration_vocab_size > 0:
+                    phoneme_ids = np.where(
+                        (phoneme_ids >= 0) & (phoneme_ids < duration_vocab_size),
+                        phoneme_ids,
+                        duration_oov_id,
+                    ).astype(np.int64, copy=False)
             if phoneme_ids.size <= 0:
                 raise RuntimeError(f"{tensor_path}: empty phoneme_ids")
             if phoneme_ids.shape != durations.shape:
@@ -404,6 +450,7 @@ def evaluate(
     *,
     batch_size: int,
     max_duration: int,
+    length_scale: float = 1.0,
 ) -> dict[str, Any]:
     model.eval()
     token_abs_errors: list[float] = []
@@ -419,7 +466,7 @@ def evaluate(
     for start in range(0, len(samples), batch_size):
         batch = samples[start : start + batch_size]
         ids, durations, mask = pad_batch(batch, device)
-        pred = predict_durations(model, ids, mask, max_duration=max_duration)
+        pred = predict_durations(model, ids, mask, max_duration=max_duration, length_scale=length_scale)
         pred_cpu = pred.cpu().numpy()
         target_cpu = durations.to(dtype=torch.long).cpu().numpy()
         mask_cpu = mask.cpu().numpy()
@@ -446,6 +493,7 @@ def evaluate(
     log_ratios = np.asarray(abs_log_frame_ratios, dtype=np.float64)
     abs_frames = np.asarray(abs_frame_errors, dtype=np.float64)
     return {
+        "length_scale": float(length_scale),
         "samples": int(len(samples)),
         "tokens": int(token_abs.size),
         "token_mae": float(token_abs.mean()),
@@ -513,6 +561,23 @@ def main() -> None:
         raise ValueError(f"--steps must be positive, got {args.steps}")
     if args.batch_size <= 0:
         raise ValueError(f"--batch-size must be positive, got {args.batch_size}")
+    if args.duration_vocab_size < 0:
+        raise ValueError(f"--duration-vocab-size must be non-negative, got {args.duration_vocab_size}")
+    if args.duration_vocab_size > 0 and not (0 <= args.duration_oov_id < args.duration_vocab_size):
+        raise ValueError(
+            f"--duration-oov-id must be in [0, {args.duration_vocab_size}), got {args.duration_oov_id}"
+        )
+    checkpoint_steps = [
+        int(value.strip()) for value in args.checkpoint_steps.split(",") if value.strip()
+    ]
+    if checkpoint_steps and (
+        checkpoint_steps != sorted(set(checkpoint_steps))
+        or checkpoint_steps[0] < 0
+        or checkpoint_steps[-1] > args.steps
+    ):
+        raise ValueError("--checkpoint-steps must be ascending, unique, nonnegative, and <= steps")
+    if args.eval_max_rows < 0:
+        raise ValueError("--eval-max-rows must be nonnegative")
     random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -526,6 +591,8 @@ def main() -> None:
         pause_token_ids=pause_token_ids,
         long_preserve_threshold=args.long_preserve_threshold,
         long_preserve_scale=args.long_preserve_scale,
+        duration_vocab_size=args.duration_vocab_size,
+        duration_oov_id=args.duration_oov_id,
     )
     eval_rows, eval_samples, eval_vocab_size, eval_max_tokens = load_samples(
         args.eval_pack_dir,
@@ -535,8 +602,13 @@ def main() -> None:
         pause_token_ids=pause_token_ids,
         long_preserve_threshold=args.long_preserve_threshold,
         long_preserve_scale=args.long_preserve_scale,
+        duration_vocab_size=args.duration_vocab_size,
+        duration_oov_id=args.duration_oov_id,
     )
-    vocab_size = max(train_vocab_size, eval_vocab_size)
+    if args.eval_max_rows:
+        eval_rows = eval_rows[: args.eval_max_rows]
+        eval_samples = eval_samples[: args.eval_max_rows]
+    vocab_size = int(args.duration_vocab_size) or max(train_vocab_size, eval_vocab_size)
     max_tokens = max(train_max_tokens, eval_max_tokens)
     device = pick_device(args.device)
     config = {
@@ -553,6 +625,8 @@ def main() -> None:
         "pause_token_ids": list(pause_token_ids),
         "long_preserve_threshold": float(args.long_preserve_threshold),
         "long_preserve_scale": float(args.long_preserve_scale),
+        "duration_vocab_size_forced": int(args.duration_vocab_size),
+        "duration_oov_id": int(args.duration_oov_id),
     }
     model = DurationStudent(
         vocab_size=vocab_size,
@@ -561,6 +635,20 @@ def main() -> None:
         kernel_size=args.kernel_size,
         max_tokens=max_tokens,
     ).to(device)
+    if args.initial_checkpoint is not None:
+        initial = torch.load(args.initial_checkpoint, map_location="cpu", weights_only=False)
+        initial_config = initial.get("config")
+        if not isinstance(initial_config, dict):
+            raise RuntimeError(f"{args.initial_checkpoint}: missing config")
+        topology = ("vocab_size", "hidden", "depth", "kernel_size", "max_tokens")
+        mismatches = {
+            key: (initial_config.get(key), config.get(key))
+            for key in topology
+            if int(initial_config.get(key, -1)) != int(config.get(key, -2))
+        }
+        if mismatches:
+            raise RuntimeError(f"initial checkpoint topology mismatch: {mismatches}")
+        model.load_state_dict(initial["model_state_dict"], strict=True)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay, betas=(0.9, 0.98))
     rng = random.Random(args.seed)
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -576,17 +664,28 @@ def main() -> None:
             "eval_rows": len(eval_rows),
             "eval_chunks": len(eval_samples),
             "device": str(device),
+            "initial_checkpoint": (
+                str(args.initial_checkpoint) if args.initial_checkpoint is not None else None
+            ),
+            "checkpoint_steps": checkpoint_steps,
+            "eval_max_rows": int(args.eval_max_rows),
             "target_duration_scale": float(args.target_duration_scale),
             "pause_preserve_scale": float(args.pause_preserve_scale),
             "pause_preserve_window": int(args.pause_preserve_window),
             "pause_token_ids": list(pause_token_ids),
             "long_preserve_threshold": float(args.long_preserve_threshold),
             "long_preserve_scale": float(args.long_preserve_scale),
+            "duration_vocab_size_forced": int(args.duration_vocab_size),
+            "duration_oov_id": int(args.duration_oov_id),
         },
     )
 
     logs: list[dict[str, Any]] = []
     started = time.time()
+    if 0 in checkpoint_steps:
+        save_checkpoint(args.out_dir / "duration-student-step0.pt", model, config, args)
+        model.to(device)
+        model.train()
     print(
         json.dumps(
             {
@@ -603,6 +702,8 @@ def main() -> None:
                 "pause_token_ids": list(pause_token_ids),
                 "long_preserve_threshold": float(args.long_preserve_threshold),
                 "long_preserve_scale": float(args.long_preserve_scale),
+                "duration_vocab_size_forced": int(args.duration_vocab_size),
+                "duration_oov_id": int(args.duration_oov_id),
             },
             ensure_ascii=False,
         ),
@@ -640,7 +741,12 @@ def main() -> None:
             logs.append(log)
             print(json.dumps(log, ensure_ascii=False), flush=True)
 
-        if step % args.save_interval == 0 or step == args.steps:
+        should_save = (
+            step in checkpoint_steps
+            if checkpoint_steps
+            else step % args.save_interval == 0 or step == args.steps
+        )
+        if should_save:
             save_checkpoint(args.out_dir / f"duration-student-step{step}.pt", model, config, args)
             model.to(device)
             model.train()

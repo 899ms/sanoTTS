@@ -43,6 +43,28 @@ from saanotts.models.widebasis_vocoder import WideBasisBlock
 from saanotts.models.widebasis_vocoder import WideBasisVocoder
 from saanotts.models.widebasis_vocoder import WideBasisVocoderConfig
 from saanotts.models.widebasis_vocoder import widebasis_parameter_breakdown
+from saanotts.models.nirmal_tts import NirmalAdaptiveMidbandEnhancer
+from saanotts.models.nirmal_tts import NirmalConfig
+from saanotts.models.nirmal_tts import NirmalDecoderOutput
+from saanotts.models.nirmal_tts import NirmalFrameDeterministicPosteriorEncoder
+from saanotts.models.nirmal_tts import NirmalFrameDeterministicTextPrior
+from saanotts.models.nirmal_tts import NirmalFrameDeterministicTTS
+from saanotts.models.nirmal_tts import NirmalFrameNormalizedPosteriorEncoder
+from saanotts.models.nirmal_tts import NirmalFrameNormalizedTextPrior
+from saanotts.models.nirmal_tts import NirmalFrameNormalizedTTS
+from saanotts.models.nirmal_tts import NirmalGrainDecoder
+from saanotts.models.nirmal_tts import NirmalWaveDecoder
+from saanotts.models.nirmal_tts import NirmalPosteriorEncoder
+from saanotts.models.nirmal_tts import NirmalTTS
+from saanotts.models.nirmal_tts import NirmalTextPrior
+from saanotts.models.nirmal_tts import adjacent_grain_seam_loss
+from saanotts.models.nirmal_tts import estimate_inference_macs_per_second
+from saanotts.models.nirmal_tts import extract_overlapping_grains
+from saanotts.models.nirmal_tts import nirmal_parameter_breakdown
+from saanotts.models.nirmal_tts import nirmal_adaptive_midband_parameter_breakdown
+from saanotts.models.nirmal_tts import nirmal_frame_deterministic_parameter_breakdown
+from saanotts.models.nirmal_tts import nirmal_frame_normalized_parameter_breakdown
+from saanotts.models.nirmal_tts import normalized_overlap_add
 
 __all__ = [
     "HOP_LENGTH",
@@ -88,4 +110,26 @@ __all__ = [
     "WideBasisVocoder",
     "WideBasisVocoderConfig",
     "widebasis_parameter_breakdown",
+    "NirmalConfig",
+    "NirmalAdaptiveMidbandEnhancer",
+    "NirmalDecoderOutput",
+    "NirmalFrameDeterministicPosteriorEncoder",
+    "NirmalFrameDeterministicTextPrior",
+    "NirmalFrameDeterministicTTS",
+    "NirmalFrameNormalizedPosteriorEncoder",
+    "NirmalFrameNormalizedTextPrior",
+    "NirmalFrameNormalizedTTS",
+    "NirmalGrainDecoder",
+    "NirmalWaveDecoder",
+    "NirmalPosteriorEncoder",
+    "NirmalTTS",
+    "NirmalTextPrior",
+    "adjacent_grain_seam_loss",
+    "estimate_inference_macs_per_second",
+    "extract_overlapping_grains",
+    "nirmal_parameter_breakdown",
+    "nirmal_adaptive_midband_parameter_breakdown",
+    "nirmal_frame_deterministic_parameter_breakdown",
+    "nirmal_frame_normalized_parameter_breakdown",
+    "normalized_overlap_add",
 ]

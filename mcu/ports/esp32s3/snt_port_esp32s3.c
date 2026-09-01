@@ -38,8 +38,22 @@ int snt_weights_resident(const void *p) {
     return a >= 0x3FC80000u && a < 0x3FD00000u;
 }
 
+/* Residency accounting. The port dispatches SIMD only for operands that pass
+ * snt_weights_resident(); everything else silently takes the scalar C loop.
+ * These counters make that split a measurement instead of an inference. */
+int64_t g_mv_macs_simd, g_mv_macs_scalar;
+int64_t g_mv_calls_simd, g_mv_calls_scalar;
+void snt_port_res_reset(void) {
+    g_mv_macs_simd = g_mv_macs_scalar = 0;
+    g_mv_calls_simd = g_mv_calls_scalar = 0;
+}
+
 int32_t snt_dot_s8(const int8_t *a, const int8_t *b, int len) {
-    if (snt_weights_resident(b)) return esp_nn_dot_s8_aligned_esp32s3(a, b, len);
+    if (snt_weights_resident(b)) {
+        g_mv_calls_simd++; g_mv_macs_simd += len;
+        return esp_nn_dot_s8_aligned_esp32s3(a, b, len);
+    }
+    g_mv_calls_scalar++; g_mv_macs_scalar += len;
     int32_t acc = 0;
     for (int i = 0; i < len; i++) acc += (int32_t)a[i] * (int32_t)b[i];
     return acc;
@@ -48,14 +62,19 @@ int32_t snt_dot_s8(const int8_t *a, const int8_t *b, int len) {
 void snt_matvec_s8(const int8_t *act, const int8_t *w, int32_t *out,
                    int rows, int len) {
     if (snt_weights_resident(w)) {
+        g_mv_calls_simd++; g_mv_macs_simd += (int64_t)rows * len;
         int chunks = len >> 4;
         if (chunks == 3) { sn_matvec_s8_c3(act, w, out, rows); return; }
         if (chunks == 5) { sn_matvec_s8_c5(act, w, out, rows); return; }
         sn_matvec_s8_g(act, w, out, rows, chunks);
         return;
     }
-    for (int r = 0; r < rows; r++)
-        out[r] = snt_dot_s8(act, w + (long)r * len, len);
+    g_mv_calls_scalar++; g_mv_macs_scalar += (int64_t)rows * len;
+    for (int r = 0; r < rows; r++) {
+        int32_t acc = 0;
+        for (int i = 0; i < len; i++) acc += (int32_t)act[i] * (int32_t)w[(long)r * len + i];
+        out[r] = acc;
+    }
 }
 
 /* dual-core worker: MUST block while idle (busy-wait costs ~10% memory-bus
@@ -81,13 +100,13 @@ int snt_scratch_id(void) { return xPortGetCoreID(); }
 
 void snt_port_esp32s3_start_worker(void) {
     if (s_up) return;
-    xTaskCreatePinnedToCore(worker_task, "sntwork", 4096, NULL,
+    xTaskCreatePinnedToCore(worker_task, "sntwork", 8192, NULL,
                             configMAX_PRIORITIES - 2, &s_worker, 1);
     s_up = 1;
 }
 
 void snt_par_run(snt_par_fn f, int n, void *ctx) {
-    if (!s_up || n < 8) { f(0, n, ctx); return; }
+    if (!s_up || n < 2) { f(0, n, ctx); return; }
     int mid = n / 2;
     s_fn = f; s_ctx = ctx; s_lo = mid; s_hi = n; s_done = 0;
     __sync_synchronize();

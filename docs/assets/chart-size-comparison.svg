@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 270" width="640" height="270"
      font-family="Lucida Console, Monaco, monospace" font-size="11"
-     role="img" aria-label="Horizontal bar chart of parameter count on a linear axis from 0 to 85 million. The sanoTTS family, 0.75 to 1.8 million parameters across 9 voices, and TinyTTS at 1.62 million are tiny slivers; Inflect Nano at 4.63 million is a short bar; Kokoro at 82 million fills nearly the whole axis. sanoTTS is highlighted in crimson.">
+     role="img" aria-label="Horizontal bar chart of parameter count on a linear axis from 0 to 85 million. The sanoTTS family, 0.29 to 2.27 million parameters across 11 voices, and TinyTTS at 1.62 million are tiny slivers; Inflect Nano at 4.63 million is a short bar; Kokoro at 82 million fills nearly the whole axis. sanoTTS is highlighted in crimson.">
   <title>Size comparison (parameters)</title>
   <rect x="0" y="0" width="640" height="270" fill="#ffffff"/>
   <!-- gridlines: linear axis 0 to 85M, plot x 145..620 -->
@@ -18,12 +18,12 @@
   <text x="592.1" y="245" text-anchor="middle" fill="#666" font-size="10">80M</text>
   <text x="382" y="263" text-anchor="middle" fill="#888" font-size="10">parameters &#8212; linear axis, so the sliver IS the point</text>
 
-  <!-- sanoTTS family: darker crimson 0..0.75M (smallest voice), crimson to 1.8M (largest) -->
-  <text x="135" y="39" text-anchor="end" fill="#111" font-weight="bold" font-size="12">sanoTTS (9 voices)</text>
-  <text x="135" y="53" text-anchor="end" fill="#666" font-size="10">0.75M&#8211;1.8M params</text>
-  <rect x="145" y="30" width="10.3" height="20" fill="#DC143C"><title>sanoTTS family: largest voice hfc, 1.83M params</title></rect>
-  <rect x="145" y="30" width="4.2" height="20" fill="#8B0A26"><title>sanoTTS family: smallest voice, 745k params (the on-device model)</title></rect>
-  <text x="161" y="44" fill="#DC143C" font-weight="bold">0.75M&#8211;1.8M</text>
+  <!-- sanoTTS family: darker crimson 0..0.29M (smallest voice), crimson to 2.27M (largest); 5.588 px per million -->
+  <text x="135" y="39" text-anchor="end" fill="#111" font-weight="bold" font-size="12">sanoTTS (11 voices)</text>
+  <text x="135" y="53" text-anchor="end" fill="#666" font-size="10">0.29M&#8211;2.27M params</text>
+  <rect x="145" y="30" width="12.7" height="20" fill="#DC143C"><title>sanoTTS family: largest voice heart, 2.27M params</title></rect>
+  <rect x="145" y="30" width="1.6" height="20" fill="#8B0A26"><title>sanoTTS family: smallest voice heart-nano, 294k params</title></rect>
+  <text x="163" y="44" fill="#DC143C" font-weight="bold">0.29M&#8211;2.27M</text>
 
   <!-- TinyTTS 1.62M -->
   <text x="135" y="92" text-anchor="end" fill="#111" font-weight="bold" font-size="13">TinyTTS</text>

@@ -29,6 +29,12 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
+# E13: qat_ste sits next to this file (~/saanotts/tools on k2, tools/ in the repo).
+_QAT_DIR = str(Path(__file__).resolve().parent)
+if _QAT_DIR not in sys.path:
+    sys.path.insert(0, _QAT_DIR)
+import qat_ste  # noqa: E402
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PACK_DIR = (
@@ -632,6 +638,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--load-checkpoint", type=Path, default=None)
     parser.add_argument("--eval-only", action="store_true")
     parser.add_argument("--steps", type=int, default=1500)
+    parser.add_argument(
+        "--checkpoint-steps",
+        type=str,
+        default="",
+        help=(
+            "Optional comma-separated training steps at which to save "
+            "checkpoint_stepNNNNNN.pt snapshots. Empty (default) preserves "
+            "the historical final-checkpoint-only behavior."
+        ),
+    )
     parser.add_argument("--lr", type=float, default=2e-3)
     parser.add_argument("--mse-weight", type=float, default=0.25)
     parser.add_argument(
@@ -808,6 +824,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--token-depth", type=int, default=3)
     parser.add_argument("--kernel-size", type=int, default=5)
     parser.add_argument(
+        "--qat",
+        type=str,
+        default="off",
+        choices=("off", "c-int8"),
+        help="E13 quantisation-aware training: 'c-int8' routes every dense Conv1d "
+        "forward through the C-runtime-faithful int8 STE fake-quant "
+        "(tools/qat_ste.py: per-output-channel int8 weights round-half-even, "
+        "per-output-column window int8 activations round-half-away). The embedding "
+        "stays float (it is a table lookup on device). Fresh models only; "
+        "state_dict keys are unchanged. 'off' (default) is bit-identical to before.",
+    )
+    parser.add_argument(
         "--latent-adv-weight",
         type=float,
         default=0.0,
@@ -883,7 +911,25 @@ def parse_args() -> argparse.Namespace:
             "have a matching decoder cut, such as log_mel."
         ),
     )
+    parser.add_argument(
+        "--skip-final-eval",
+        action="store_true",
+        help=(
+            "Skip the full train/eval latent sweep after optimization. This does not "
+            "change training or milestone checkpoints and is useful when an external "
+            "watcher performs the registered waveform evaluation."
+        ),
+    )
     parser.add_argument("--sentence-silence", type=float, default=0.12)
+    parser.add_argument(
+        "--vocab-size",
+        type=int,
+        default=0,
+        help=(
+            "Force the acoustic embedding vocabulary size. Zero infers it from the train/eval packs; "
+            "a forced value must cover every observed phoneme ID."
+        ),
+    )
     parser.add_argument(
         "--sample-weight-mode",
         choices=("uniform", "frames"),
@@ -2369,6 +2415,16 @@ def source_filter_aware_loss_components(
 def train(args: argparse.Namespace) -> dict[str, Any]:
     if args.eval_only and args.load_checkpoint is None:
         raise ValueError("--eval-only requires --load-checkpoint")
+    checkpoint_steps = sorted(
+        {int(value) for value in str(args.checkpoint_steps).split(",") if value.strip()}
+    )
+    if any(step <= 0 or step > int(args.steps) for step in checkpoint_steps):
+        raise ValueError(
+            "--checkpoint-steps values must be positive and no greater than --steps; "
+            f"got {checkpoint_steps!r} for {args.steps} steps"
+        )
+    if args.eval_only and checkpoint_steps:
+        raise ValueError("--checkpoint-steps cannot be used with --eval-only")
     for name in (
         "mse_weight",
         "norm_l1_weight",
@@ -2525,7 +2581,14 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
         )
         if eval_out_channels != out_channels:
             raise RuntimeError(f"eval out_channels {eval_out_channels} != train out_channels {out_channels}")
-    vocab_size = max(train_vocab_size, eval_vocab_size)
+    observed_vocab_size = max(train_vocab_size, eval_vocab_size)
+    if int(args.vocab_size) < 0:
+        raise ValueError(f"--vocab-size must be non-negative, got {args.vocab_size}")
+    if int(args.vocab_size) > 0 and int(args.vocab_size) < observed_vocab_size:
+        raise ValueError(
+            f"--vocab-size {args.vocab_size} cannot cover observed train/eval vocabulary {observed_vocab_size}"
+        )
+    vocab_size = int(args.vocab_size) or observed_vocab_size
     device = pick_device(args.device)
     source_filter_config: dict[str, Any] | None = None
     if source_filter_enabled:
@@ -2616,10 +2679,13 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
             "kernel_size": args.kernel_size,
             "out_channels": out_channels,
         }
-        if args.architecture == "token_context":
+        if args.architecture in (
+            "token_context",
+            "separable_token_context",
+            "factorized_token_context",
+        ):
             model_config["token_depth"] = int(args.token_depth)
         if args.architecture == "factorized_token_context":
-            model_config["token_depth"] = int(args.token_depth)
             model_config["envelope_channels"] = int(args.factorized_envelope_channels)
             model_config["gain_channels"] = int(args.factorized_gain_channels)
             model_config["head_depth"] = int(args.factorized_head_depth)
@@ -2638,6 +2704,24 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
                 )
             model_config["source_channels"] = int(factorized_source_channels)
         model = create_model_from_config(model_config).to(device)
+    if str(args.qat) == "c-int8":
+        if args.load_checkpoint is not None:
+            raise RuntimeError(
+                "--qat c-int8 is registered for fresh models only (E13); "
+                "refusing to fake-quantise a loaded checkpoint mid-lineage"
+            )
+        qat_touched = qat_ste.enable_dense_conv1d_qat(model)
+        model_config["qat"] = {
+            "scheme": "c-int8",
+            "covers_dense_conv1d": qat_touched,
+            "excludes": ["embedding (table lookup)"],
+            "weights": "per-output-channel symmetric int8, round-half-even",
+            "activations": "per-output-column window int8 over in_ch*K, round-half-away",
+        }
+        print(
+            json.dumps({"qat_enabled": {"scheme": "c-int8", "conv1d": qat_touched}}),
+            flush=True,
+        )
     parameter_table = latent_parameter_table(model)
     print(json.dumps({"model_parameters": parameter_table}, ensure_ascii=False), flush=True)
     factorized_freezing = apply_factorized_freezing(
@@ -2775,6 +2859,31 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
             loss.backward()
             grad_norm = float(torch.nn.utils.clip_grad_norm_(trainable_parameters, max_norm=5.0).detach().cpu())
             optimizer.step()
+            if step in checkpoint_steps:
+                checkpoint_path = args.out_dir / f"checkpoint_step{step:06d}.pt"
+                checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+                torch.save(
+                    {
+                        "model_state_dict": {
+                            name: value.detach().cpu()
+                            for name, value in model.state_dict().items()
+                        },
+                        "config": model_config,
+                        "train_args": vars(args),
+                        "step": int(step),
+                    },
+                    checkpoint_path,
+                )
+                print(
+                    json.dumps(
+                        {
+                            "event": "checkpoint",
+                            "step": int(step),
+                            "path": str(checkpoint_path),
+                        }
+                    ),
+                    flush=True,
+                )
             if step == 1 or step % args.log_interval == 0 or step == args.steps:
                 log = {
                     "step": int(step),
@@ -2825,10 +2934,25 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
                     log["latent_adv_g"] = float(latent_adv_g.detach().cpu())
                     log["latent_disc_loss"] = float(latent_disc_loss.detach().cpu())
                 logs.append(log)
-                print(json.dumps(log, ensure_ascii=False))
+                print(json.dumps(log, ensure_ascii=False), flush=True)
 
-    train_eval_metrics = evaluate_latent(model, samples, device, latent_stats)
-    eval_metrics = evaluate_latent(model, eval_samples, device, latent_stats) if eval_samples is not None else None
+    if bool(args.skip_final_eval):
+        train_eval_metrics: dict[str, Any] = {
+            "skipped": True,
+            "reason": "skip_final_eval",
+        }
+        eval_metrics: dict[str, Any] | None = (
+            {"skipped": True, "reason": "skip_final_eval"}
+            if eval_samples is not None
+            else None
+        )
+    else:
+        train_eval_metrics = evaluate_latent(model, samples, device, latent_stats)
+        eval_metrics = (
+            evaluate_latent(model, eval_samples, device, latent_stats)
+            if eval_samples is not None
+            else None
+        )
     saved_checkpoint: Path | None = None
     if not args.eval_only:
         saved_checkpoint = args.out_dir / "latent-student.pt"
@@ -2929,6 +3053,7 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
         "vocab_size": int(vocab_size),
         "train_vocab_size": int(train_vocab_size),
         "eval_vocab_size": int(eval_vocab_size),
+        "vocab_size_forced": int(args.vocab_size),
         "out_channels": int(out_channels),
         "model_config": model_config,
         "parameter_table": parameter_table,

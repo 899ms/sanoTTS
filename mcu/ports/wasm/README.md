@@ -86,3 +86,40 @@ This runs **phoneme IDs → PCM**. The Devanagari/grapheme→phoneme frontend is
 separate piece and is not compiled here — the demo drives the runtime with the
 embedded golden phoneme-ID sequence. Text-in from an arbitrary string is a
 second, separable layer.
+
+## The mel-100 lineage: `snt_nano.c` in the browser (heart, heart-nano)
+
+`build_nano.sh` compiles `src/snt_nano.c` -- the 294k nano stacks and the
+2,272,145-parameter release stack -- to one module PER LINEAGE, because that
+runtime bakes every shape and byte offset in from the generated
+`mcu/models/<lineage>/nano_q8_meta.h`:
+
+```bash
+bash mcu/ports/wasm/build_nano.sh en_us_e13b    heartnano SaanoNanoHeartNano int8
+bash mcu/ports/wasm/build_nano.sh en_us_r227f32 heart     SaanoNanoHeart     f32
+node mcu/ports/wasm/verify_nano_node.mjs heartnano en_us_e13b     # min corr 0.981, PASS
+node mcu/ports/wasm/verify_nano_node.mjs heart     en_us_r227f32  # min corr 1.000000, PASS
+```
+
+| file | role |
+| --- | --- |
+| `snt_nano_wasm.c` | port shims + `snt_nano_wasm_synthesize` (front, dec, ids, optional frozen durations, 64-bit seed as two halves, arena, out) |
+| `build_nano.sh` | `emcc` -> `web/snt_nano_<voice>.js`; `f32` adds `-DSNT_NANO_W_F32` |
+| `verify_nano_node.mjs` | the fixture gate under Node: every `mcu/test/fixtures/<lineage>` row with its frozen durations and seed, minimum Pearson vs the float PyTorch reference, 0.98 |
+
+Two builds of the same C:
+
+- **int8** (heart-nano): the device math path unchanged -- int8 weight blobs,
+  dynamically quantised int8 activations, the scalar reference kernels. Same
+  numbers as `make -C mcu test-nano` up to libm differences in the last digit.
+- **f32** (heart): `tools/export_e12_nano_q8.py --weights f32` writes the same
+  regions as float32 rows with unit scales, and `SNT_NANO_W_F32` reads them with
+  float activations. Needed because the release stack measures **0.951** minimum
+  correlation under int8 (below the 0.98 gate) and **1.000000** here. The header's
+  `NANO_WEIGHT_FORMAT` makes an int8/f32 mismatch a compile error.
+
+The phoneme path is the trellis one (`trellis_frontend.js`): misaki-normalised
+espeak-ng IPA into the 62-symbol corpus vocabulary, which is the same object for
+Trellis-RIFT and for every mel-100 stack (`artifacts/kokoro-corpus-af_heart-20260713/kokoro_vocab.json`,
+checked entry by entry). The decoder-noise seed is `sha256(text)[:8]`, the
+renderer's own convention, exposed as `snt_nano_wasm_seed_from_text`.

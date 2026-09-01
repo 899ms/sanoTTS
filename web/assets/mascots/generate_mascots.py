@@ -432,6 +432,46 @@ def trellis():
     return im
 
 
+def _heart_shape(d, cx, top, w, fill, outline):
+    """Blocky pixel heart: two round lobes over a pointed base, outlined."""
+    r = w // 4
+    ellipse(d, (cx - 2 * r, top, cx, top + 2 * r), outline)
+    ellipse(d, (cx, top, cx + 2 * r, top + 2 * r), outline)
+    poly(d, [(cx - 2 * r, top + r), (cx + 2 * r, top + r), (cx, top + 2 * r + w // 2)], outline)
+    ellipse(d, (cx - 2 * r + 1, top + 1, cx - 1, top + 2 * r - 1), fill)
+    ellipse(d, (cx + 1, top + 1, cx + 2 * r - 1, top + 2 * r - 1), fill)
+    poly(d, [(cx - 2 * r + 1, top + r), (cx + 2 * r - 1, top + r), (cx, top + 2 * r + w // 2 - 2)], fill)
+    rect(d, (cx - 2 * r + 1, top + r - 1, cx + 2 * r - 1, top + r + 1), fill)
+
+
+def heart():
+    """A big crimson heart with a face -- the voice is named for its speaker."""
+    im, d = common_canvas()
+    floor_shadow(d, 6, 26)
+    _heart_shape(d, 16, 6, 24, CRIMSON, OUTLINE)
+    # highlight on the left lobe
+    rect(d, (9, 8, 10, 9), "#F26A84")
+    px(d, 11, 7, "#F26A84")
+    face(d, [(12, 13), (19, 13)], smile_y=17)
+    us_pin(d, 22, 22)
+    return im
+
+
+def heartnano():
+    """The same heart, shrunk: a tiny heart standing on a 24 kHz waveform."""
+    im, d = common_canvas()
+    floor_shadow(d, 8, 24)
+    _heart_shape(d, 16, 6, 16, CRIMSON, OUTLINE)
+    rect(d, (11, 8, 12, 8), "#F26A84")
+    face(d, [(13, 11), (18, 11)], smile_y=14)
+    # a short waveform underneath: the 337 KB stack still makes sound
+    for i, h in enumerate((1, 3, 2, 4, 2, 3, 1)):
+        x = 10 + i * 2
+        d.line([(x, 25), (x, 25 - h)], fill=CRIMSON_DARK, width=1)
+    us_pin(d, 23, 3)
+    return im
+
+
 def render(sprite, filename, description):
     # Scale only once, with no antialiasing, to retain the 32 px grid.
     sprite = sprite.resize((SIZE, SIZE), Image.Resampling.NEAREST)
@@ -463,6 +503,8 @@ def main():
         "chinese.png": (chinese, "Chinese — giant panda with China flag badge"),
         "mcu.png": (mcu, "MCU — tiny robot with ESP32 development board torso"),
         "trellis.png": (trellis, "Trellis — spider on a woven web with United States flag pin"),
+        "heart.png": (heart, "Heart — crimson heart with a face and United States flag pin"),
+        "heartnano.png": (heartnano, "Heart-nano — tiny crimson heart over a waveform, United States flag pin"),
     }
     for filename, (builder, description) in mascots.items():
         render(builder(), filename, description)
