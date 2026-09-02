@@ -1,0 +1,87 @@
+name: Board benchmark report
+description: Report saanoTTS speed and correctness on a board we have not measured
+title: "[board] <chip / board name>"
+labels: ["board-report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for measuring a board for us.
+
+        We have measured exactly two chips ourselves — ESP32-S3 (0.22× real time)
+        and ESP32-C3 (5.72×). Every other row in
+        [`docs/mcu-classes-and-porting.md`](../blob/main/docs/mcu-classes-and-porting.md)
+        is a projection. Your run turns one into a measurement.
+
+        Run `arduino/examples/BoardBenchmark` and paste its REPORT block below.
+        **A FAIL is still worth reporting** — a reproducible failure tells us
+        more than silence.
+  - type: input
+    id: board
+    attributes:
+      label: Board
+      description: Exact board, not just the chip — e.g. "Teensy 4.1", "Nucleo-H743ZI2", "Alif Ensemble E7 DevKit"
+    validations:
+      required: true
+  - type: input
+    id: mcu
+    attributes:
+      label: MCU / core
+      description: e.g. "i.MX RT1062, Cortex-M7 @ 600 MHz", "STM32H743, Cortex-M7 @ 480 MHz"
+    validations:
+      required: true
+  - type: textarea
+    id: report
+    attributes:
+      label: REPORT block
+      description: Paste everything between "---- REPORT" and "---- END REPORT ----", unedited.
+      render: text
+      placeholder: |
+        ---- REPORT (paste this whole block) ----
+        board:        Teensy 4.1
+        cpu_hz:       600000000
+        arena_bytes:  327696
+        rc:           0
+        frames:       134
+        samples:      34304
+        compared:     34304
+        audio_s:      1.5557
+        elapsed_s:    0.4812
+        RTF:          0.3093
+        eff_MMAC_s:   145.5
+        golden_corr:  0.989148
+        rms_ratio:    0.935022
+        verdict:      PASS
+        ---- END REPORT ----
+    validations:
+      required: true
+  - type: dropdown
+    id: kernels
+    attributes:
+      label: Kernel backing
+      description: Which kernels did the build use?
+      options:
+        - scalar reference (no changes)
+        - CMSIS-NN
+        - Helium / MVE
+        - vendor NN library (say which in notes)
+        - hand-written SIMD (say which in notes)
+    validations:
+      required: true
+  - type: input
+    id: toolchain
+    attributes:
+      label: Toolchain
+      description: e.g. "Arduino IDE 2.3.2 + Teensyduino 1.59", "PlatformIO 6.1.11, platform-ststm32 17.0.0"
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything you had to change
+      description: |
+        Compiler flags, clock settings, RAM section placement, linker script edits,
+        anything that did not work first try. This is the most useful field for us —
+        if you had to fight it, say how.
+    validations:
+      required: false
