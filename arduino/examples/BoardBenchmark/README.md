@@ -53,14 +53,22 @@ pick the board.
 - First upload: hold **BOOTSEL** while plugging in, then upload. After that,
   the IDE can reset it over USB.
 
-### STM32 Nucleo-H743ZI2 (and other ≥1 MB-flash STM32)
+### STM32 Nucleo (H743ZI2, H745ZI-Q / H755ZI-Q, F767ZI, F429ZI)
 
 - URL: `https://raw.githubusercontent.com/stm32duino/BoardManagerFiles/main/package_stmicroelectronics_index.json`
 - Core: **STM32 MCU based boards** (3.x)
-- Board: `Nucleo-144`, then **Tools → Board part number → Nucleo H743ZI2**
+- Board: `Nucleo-144`, then **Tools → Board part number → …**
+- **Nucleo-H755ZI-Q:** the core has no H755 entry. Select **Nucleo H745ZI-Q** —
+  it uses the `H745Z(G-I)T_H755ZIT` variant, which is your die.
+- **Tools → U(S)ART support: `Enabled (generic 'Serial')`**
+- **Tools → USB support: `None`.** If you pick *CDC (generic 'Serial'
+  supersede U(S)ART)*, `Serial` moves to the user USB connector and the
+  ST-Link COM port stays silent.
 - Upload needs **STM32CubeProgrammer** installed (the core calls it).
-- Serial is the ST-Link virtual COM port. Leave *U(S)ART support* at its
-  default, *Enabled (generic Serial)*.
+- **Opening the serial monitor does not reset a Nucleo.** The sketch starts
+  the moment flashing finishes, so its first report is printed before you can
+  open the port. It repeats every 12 s until you press a key, so just wait —
+  or press Enter to run it immediately.
 - 512 KB-flash parts (e.g. Nucleo-F411RE) do not fit; the linker will say so.
 
 ### Arduino GIGA R1 / Portenta H7 / Nicla Vision / Opta / Nano 33 BLE / Nano RP2040 Connect
@@ -101,8 +109,10 @@ the weights.
 
 1. **Upload.**
 2. **Tools → Serial Monitor**, set **115200 baud**.
-3. If the screen is blank, **press Enter** in the monitor — the benchmark
-   re-runs on any keypress.
+3. If the screen is blank, **wait 12 seconds** — the report repeats until you
+   press a key. Boards whose USB-serial bridge does not reset the MCU (every
+   ST-Link Nucleo, most external programmers) finish their first run before
+   you can open the monitor. Pressing Enter also runs it immediately.
 
 Takes a few seconds on fast boards, up to a minute on slow ones.
 

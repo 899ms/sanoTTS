@@ -393,6 +393,11 @@ static void run_benchmark() {
   free(arena);
 }
 
+/* Set once a key arrives, which is the only reliable evidence that somebody
+ * is actually watching the port. Until then the report repeats. */
+static bool g_seen_reader = false;
+static unsigned long g_last_run_ms = 0;
+
 void setup() {
   Serial.begin(115200);
   unsigned long t0 = millis();
@@ -401,6 +406,7 @@ void setup() {
    * unconditionally, so this line is safe on every core. */
   snt_port_dualcore_start();
   run_benchmark();
+  g_last_run_ms = millis();
 }
 
 /* The report is easy to miss if the monitor opens after boot -- USB-CDC ports
@@ -455,11 +461,37 @@ static void emit_wav(void) {
   Serial.println(F("Save it with:  python3 extras/wav_from_serial.py <port> out.wav"));
 }
 
+/* Repeat the report until somebody presses a key.
+ *
+ * Printing once at boot quietly assumes the serial monitor was already open,
+ * and on a large family of boards it cannot be. Opening the port only resets
+ * the MCU where the USB-serial bridge is wired to reset it -- true of ESP32
+ * dev boards over DTR, NOT true of the ST-Link VCP on every Nucleo, nor of
+ * most external programmers. There the sketch runs the instant flashing
+ * finishes, prints the whole report to nobody, and sits idle; the user opens
+ * the monitor seconds later and sees an empty window with no clue why.
+ *
+ * That was reported from a Nucleo-H755ZI-Q: compiled, uploaded, "Application
+ * is running", no output. Nothing was wrong with the board.
+ *
+ * So the report repeats every REPEAT_MS until the first keypress, after which
+ * it is on demand -- a reader who is present should not be spammed. */
+static const unsigned long REPEAT_MS = 12000;
+
 void loop() {
   if (Serial.available()) {
     const int c = Serial.read();
     while (Serial.available()) Serial.read();
+    g_seen_reader = true;
     if (c == 'w' || c == 'W') emit_wav();
     else run_benchmark();
+    g_last_run_ms = millis();
+    return;
+  }
+  if (!g_seen_reader && (millis() - g_last_run_ms) >= REPEAT_MS) {
+    Serial.println();
+    Serial.println(F("(repeating -- press any key to stop this and run on demand)"));
+    run_benchmark();
+    g_last_run_ms = millis();
   }
 }
