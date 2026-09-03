@@ -133,6 +133,45 @@ static const size_t ARENA_LADDER[] = {
  * not a constant you have to remember to change. */
 static const size_t ARENA_FLOOR = SANOTTS_BENCH_ARENA_MIN;
 
+/* ---- STM32H7: the arena cannot come from malloc ----------------------
+ * stm32duino's H7 linker script declares exactly one RAM region:
+ *     RAM (xrw) : ORIGIN = 0x20000000, LENGTH = LD_MAX_DATA_SIZE
+ *     _estack = 0x20020000;
+ * That is 128 KB of DTCM, and .data, .bss, the heap and the stack all share
+ * it. With this sketch's ~83 KB of globals the heap can offer roughly 45 KB,
+ * so malloc cannot produce the arena on ANY STM32H7 no matter how short the
+ * utterance -- reported from a Nucleo-H755ZI-Q. The IDE's "884736 maximum"
+ * counts every RAM bank on the part; the linker script uses one of them.
+ *
+ * Meanwhile the 512 KB AXI SRAM at 0x24000000 (D1 domain, enabled out of
+ * reset) is not mentioned anywhere in that script and sits entirely unused.
+ * The arena is CPU-only -- no DMA, no peripheral shares it -- so placing it
+ * there takes memory nobody else has claimed. Build with
+ * -DSANOTTS_NO_H7_AXI_SRAM to fall back to malloc and see it fail.
+ */
+#if defined(ARDUINO_ARCH_STM32) && defined(STM32H7xx) && !defined(SANOTTS_NO_H7_AXI_SRAM)
+#  define SANOTTS_H7_AXI_SRAM 1
+#  define SANOTTS_H7_AXI_BASE 0x24000000u
+#  ifndef SANOTTS_H7_AXI_SIZE
+#    define SANOTTS_H7_AXI_SIZE (512u * 1024u)
+#  endif
+#else
+#  define SANOTTS_H7_AXI_SRAM 0
+#endif
+
+/* What a board could actually hand out, for when it could not hand out
+ * enough. Only the largest CONTIGUOUS block matters, and no portable API
+ * reports it -- so ask malloc directly. Every probe is freed. */
+static size_t probe_largest_block(size_t hi) {
+  const size_t step = 2048;
+  size_t best = 0;
+  for (size_t want = hi; want >= step; want -= step) {
+    void *p = malloc(want);
+    if (p) { free(p); best = want; break; }
+  }
+  return best;
+}
+
 /* Build with -DSANOTTS_BENCH_MAX_ARENA=<bytes> to skip the larger rungs.
  * Useful if malloc on your core succeeds but leaves the rest of the sketch
  * with no heap, and it is how extras/bench_host_check.sh exercises the
@@ -250,6 +289,13 @@ static void run_benchmark() {
    * and an arena that starves them turns a clean number into a hang. */
   uint8_t *arena = NULL;
   size_t arena_size = 0;
+  const char *arena_src = "malloc";
+#if SANOTTS_H7_AXI_SRAM
+  arena = (uint8_t *)(uintptr_t)SANOTTS_H7_AXI_BASE;
+  arena_size = (SANOTTS_H7_AXI_SIZE < 320u * 1024u + 16u)
+                 ? (size_t)SANOTTS_H7_AXI_SIZE : 320u * 1024u + 16u;
+  arena_src = "AXI SRAM @0x24000000";
+#else
   for (size_t i = 0; i < sizeof ARENA_LADDER / sizeof ARENA_LADDER[0]; i++) {
     if (ARENA_LADDER[i] > (size_t)SANOTTS_BENCH_MAX_ARENA) continue;
     if (ARENA_LADDER[i] < ARENA_FLOOR) break;
@@ -263,6 +309,7 @@ static void run_benchmark() {
     arena = (uint8_t *)malloc(ARENA_FLOOR + 16);
     if (arena) arena_size = ARENA_FLOOR + 16;
   }
+#endif
   if (!arena) {
     Serial.print(F("FATAL: could not allocate the "));
     Serial.print((unsigned long)ARENA_FLOOR);
@@ -273,13 +320,14 @@ static void run_benchmark() {
      * A board can report far more free heap than it can hand out at once. */
 #if defined(ARDUINO_ARCH_ESP32)
     Serial.print(F("  free heap:      ")); Serial.println((unsigned long)ESP.getFreeHeap());
-    Serial.print(F("  largest block:  ")); Serial.println((unsigned long)ESP.getMaxAllocHeap());
-    Serial.println(F("  (the arena needs ONE contiguous block, not total free heap)"));
 #endif
-    Serial.println(F("This board cannot run the whole-utterance path at this"));
-    Serial.println(F("length. The arena is ~46.5 KB fixed + 196 B per frame, so a"));
-    Serial.println(F("shorter utterance would fit. Please open an issue with the"));
-    Serial.println(F("two numbers above -- a reproducible FAIL is useful."));
+    Serial.print(F("  largest block:  "));
+    Serial.println((unsigned long)probe_largest_block(ARENA_FLOOR));
+    Serial.println(F("  (the arena needs ONE contiguous block, not total free heap)"));
+    Serial.println(F("The arena is ~46.5 KB fixed + 196 B per frame. If the largest"));
+    Serial.println(F("block above is well under the floor, this board's core puts its"));
+    Serial.println(F("heap in a small region -- see BOARDS.md. Please open an issue"));
+    Serial.println(F("with the numbers above; a reproducible FAIL is useful."));
     return;
   }
 
@@ -356,6 +404,7 @@ static void run_benchmark() {
   if (CPU_CLOCK_HZ > 0) Serial.println(CPU_CLOCK_HZ);
   else Serial.println(F("unknown -- please add your board's clock"));
   Serial.print(F("arena_bytes:  ")); Serial.println((unsigned long)arena_size);
+  Serial.print(F("arena_src:    ")); Serial.println(arena_src);
   Serial.print(F("rc:           ")); Serial.println(rc);
   Serial.print(F("frames:       ")); Serial.println(st.frames);
   Serial.print(F("samples:      ")); Serial.println(st.samples);
@@ -390,7 +439,9 @@ static void run_benchmark() {
   Serial.println(F("Press Enter to run again, or 'w' to hear it:"));
   Serial.println(F("  'w' streams the audio out as a base64 WAV, which"));
   Serial.println(F("  extras/wav_from_serial.py saves as a playable file."));
+#if !SANOTTS_H7_AXI_SRAM
   free(arena);
+#endif
 }
 
 /* Set once a key arrives, which is the only reliable evidence that somebody
@@ -415,6 +466,11 @@ void setup() {
 static void emit_wav(void) {
   uint8_t *arena = NULL;
   size_t arena_size = 0;
+#if SANOTTS_H7_AXI_SRAM
+  arena = (uint8_t *)(uintptr_t)SANOTTS_H7_AXI_BASE;
+  arena_size = (SANOTTS_H7_AXI_SIZE < 320u * 1024u + 16u)
+                 ? (size_t)SANOTTS_H7_AXI_SIZE : 320u * 1024u + 16u;
+#else
   for (size_t i = 0; i < sizeof ARENA_LADDER / sizeof ARENA_LADDER[0]; i++) {
     if (ARENA_LADDER[i] > (size_t)SANOTTS_BENCH_MAX_ARENA) continue;
     if (ARENA_LADDER[i] < ARENA_FLOOR) break;
@@ -425,6 +481,7 @@ static void emit_wav(void) {
     arena = (uint8_t *)malloc(ARENA_FLOOR + 16);
     if (arena) arena_size = ARENA_FLOOR + 16;
   }
+#endif
   if (!arena) { Serial.println(F("cannot allocate arena for WAV")); return; }
 
 #if SANOTTS_BENCH_NANO
@@ -456,7 +513,9 @@ static void emit_wav(void) {
 #endif
   b64_flush();
   Serial.println(F("---- WAV END ----"));
+#if !SANOTTS_H7_AXI_SRAM
   free(arena);
+#endif
   if (rc != 0) { Serial.print(F("synthesis failed, rc=")); Serial.println(rc); return; }
   Serial.println(F("Save it with:  python3 extras/wav_from_serial.py <port> out.wav"));
 }

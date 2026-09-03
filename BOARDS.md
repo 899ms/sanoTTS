@@ -133,11 +133,38 @@ Bold entries are newly possible at 294k; they could not fit the 567k model.
 Portenta H7 no longer needs a non-default flash split, and Nano 33 BLE drops
 from 87% of flash to 52%.
 
+### STM32H7: the arena cannot come from malloc
+
+stm32duino's H7 linker script declares exactly one RAM region:
+
+```
+RAM (xrw) : ORIGIN = 0x20000000, LENGTH = LD_MAX_DATA_SIZE
+_estack   = 0x20020000;          /* 128 KB -- DTCM only */
+```
+
+`.data`, `.bss`, heap and stack all share that 128 KB. With ~83 KB of globals
+the heap can offer roughly 45 KB, so `malloc` cannot produce the arena on any
+STM32H7 at any utterance length. The IDE's "884736 maximum" counts every RAM
+bank on the part; the linker script uses one of them. Reported from a
+Nucleo-H755ZI-Q.
+
+The sketch therefore places the arena in the **512 KB AXI SRAM at
+0x24000000** (D1 domain, enabled out of reset), which that linker script never
+mentions and nothing else claims. The arena is CPU-only -- no DMA, no shared
+peripheral. The report prints `arena_src` so you can see which was used, and
+`-DSANOTTS_NO_H7_AXI_SRAM` forces malloc back.
+
+*Compile-verified on H745ZI-Q and H743ZI2; not yet run on H7 hardware.*
+
 ### Compiles but will not run
 
-**Nucleo-F411RE** links at 85% of flash but leaves only ~48 KB of RAM, under
-the 136 KB floor, so it prints `FATAL: could not allocate` instead of a
-number. A shorter fixture row would bring it into range.
+**Nucleo-F411RE** links at 85% of flash but has only 128 KB of RAM total,
+under the ~100 KB arena plus ~82 KB of globals. It prints `FATAL: could not
+allocate` with the largest block it could actually obtain.
+
+Any board that fails this way now reports that number, probed portably with
+`malloc` rather than a vendor API, so a report says exactly how short it fell
+rather than just that it failed.
 
 ### Known not to fit
 
