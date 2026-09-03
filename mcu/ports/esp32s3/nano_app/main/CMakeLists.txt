@@ -6,5 +6,6 @@ idf_component_register(
                 "golden/r06_ids.bin" "golden/r06_durs.bin" "golden/r06_audio.bin"
                 "golden/e2e_uniform.bin" "golden/e2e_noise.bin"
     PRIV_REQUIRES esp_timer espressif__esp-nn esp_psram esp_hw_support
+                  esp_wifi esp_netif esp_event nvs_flash lwip
 )
 target_compile_definitions(${COMPONENT_LIB} PRIVATE SNT_NANO_PROF SNT_NANO_FAST_MATH)

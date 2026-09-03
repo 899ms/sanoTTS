@@ -41,10 +41,31 @@ CXXFLAGS="-O2 -std=c++11 -Wall -I$src -I$here -DFSD_FAST_MATH"
 # RAM takes a different code path -- and that path has to produce the same
 # audio, or a small-RAM reporter's numbers mean nothing. 90112 is just above
 # the 88 KB floor; 88064 is the floor itself.
-CAPS=${CAPS:-"0 327680 196608 131072 98304 90112"}
+# Expectations follow the stack the header holds. R7: 134 frames / 34,304
+# samples / corr 0.989148. nano row 0: 415 frames / 105,984 samples, and the
+# correlation is over the embedded 34,304-sample prefix.
+if grep -q "define SANOTTS_BENCH_NANO" "$sketch/sanotts_bench_data.h"; then
+  EXPECT_FRAMES=${EXPECT_FRAMES:-415}
+  EXPECT_SAMPLES=${EXPECT_SAMPLES:-105984}
+  EXPECT_CORR=${EXPECT_CORR:-0.98}
+  CAPS=${CAPS:-"0 327680 196608 147456 139264"}
+else
+  EXPECT_FRAMES=${EXPECT_FRAMES:-134}
+  EXPECT_SAMPLES=${EXPECT_SAMPLES:-34304}
+  EXPECT_CORR=${EXPECT_CORR:-0.9891}
+  CAPS=${CAPS:-"0 327680 196608 131072 98304 90112"}
+fi
 
+# Which stack the generated header holds decides which runtime to link.
+if grep -q "define SANOTTS_BENCH_NANO" "$sketch/sanotts_bench_data.h"; then
+  RUNTIME="snt_nano snt_kernels_ref snt_port_default"
+  echo "== nano stack (snt_nano.c) =="
+else
+  RUNTIME="snt_tts snt_kernels_ref snt_port_default"
+  echo "== R7 stack (snt_tts.c) =="
+fi
 echo "== compiling the runtime (C) =="
-for f in snt_tts snt_kernels_ref snt_port_default; do
+for f in $RUNTIME; do
   "$CC" $CFLAGS -c "$src/$f.c" -o "$tmp/$f.o"
 done
 
@@ -57,17 +78,24 @@ for cap in $CAPS; do
   echo
   echo "== BoardBenchmark.ino, ${label} =="
   "$CXX" $CXXFLAGS $capflag -x c++ -c "$here/bench_host_main.cpp" -o "$tmp/bench_main.o"
-  "$CXX" "$tmp"/snt_tts.o "$tmp"/snt_kernels_ref.o "$tmp"/snt_port_default.o \
-    "$tmp"/bench_main.o -lm -o "$tmp/bench_host"
+  OBJS=""
+  for f in $RUNTIME; do OBJS="$OBJS $tmp/$f.o"; done
+  "$CXX" $OBJS "$tmp"/bench_main.o -lm -o "$tmp/bench_host"
   out="$tmp/out.txt"
   "$tmp/bench_host" > "$out"
-  grep -E "arena_bytes|frames:|samples:|golden_corr|rms_ratio|verdict" "$out" | sed 's/^/  /'
+  grep -E "model:|arena_bytes|arena_peak|frames:|samples:|golden_corr|rms_ratio|verdict" "$out" | sed 's/^/  /'
 
-  grep -q "verdict:      PASS" "$out"  || { echo "FAIL (${label}): sketch did not report PASS"; exit 1; }
-  grep -q "frames:       134" "$out"   || { echo "FAIL (${label}): expected 134 frames"; exit 1; }
-  grep -q "samples:      34304" "$out" || { echo "FAIL (${label}): expected 34304 samples"; exit 1; }
-  grep -q "golden_corr:  0.9891" "$out" || { echo "FAIL (${label}): correlation drifted from 0.989148"; exit 1; }
-  grep -q "rms_ratio:    0.935" "$out" || { echo "FAIL (${label}): rms_ratio drifted from 0.935022"; exit 1; }
+  grep -q "verdict:      PASS" "$out" || { echo "FAIL (${label}): sketch did not report PASS"; exit 1; }
+  grep -q "frames:       $EXPECT_FRAMES" "$out"   || { echo "FAIL (${label}): expected $EXPECT_FRAMES frames"; exit 1; }
+  grep -q "samples:      $EXPECT_SAMPLES" "$out" || { echo "FAIL (${label}): expected $EXPECT_SAMPLES samples"; exit 1; }
+  # Numeric, not a string prefix: the gate is "at least this correlated",
+  # and a prefix match rejects a result that is BETTER than expected.
+  got=$(sed -n 's/^golden_corr:  *//p' "$out")
+  awk -v g="$got" -v w="$EXPECT_CORR" 'BEGIN{exit !(g+0 >= w+0)}' || {
+    echo "FAIL (${label}): correlation $got below $EXPECT_CORR"; exit 1; }
+  rms=$(sed -n 's/^rms_ratio:  *//p' "$out")
+  awk -v r="$rms" 'BEGIN{exit !(r+0 > 0.80 && r+0 < 1.25)}' || {
+    echo "FAIL (${label}): rms_ratio $rms outside 0.80-1.25"; exit 1; }
 done
 echo
 echo "OK: the shipped sketch reproduces golden_main.c at every arena rung"

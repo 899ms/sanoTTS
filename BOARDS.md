@@ -1,7 +1,8 @@
 # Board results
 
-saanoTTS on real silicon. **We have measured two chips.** Everything else here
-is either a projection or an empty row waiting for someone with the hardware.
+saanoTTS on real silicon. **One board is measured on the Arduino path**
+(ESP32-S3, below). Everything else here is either a projection or an empty row
+waiting for someone with the hardware.
 
 If you have one of these boards, `arduino/examples/BoardBenchmark` is a single
 sketch with no peripherals — no DAC, no SD card, no filesystem — that prints a
@@ -16,8 +17,10 @@ then Arduino IDE → *Sketch → Include Library → Add .ZIP Library…* →
 
 - **RTF** — seconds of compute per second of audio. `RTF < 1.0` is faster than
   playback. This is the interactive/offline line.
-- **eff MMAC/s** — effective int8 throughput, `45 / RTF`. The workload is a
-  measured constant of ~45 MMAC/s per second of audio.
+- **eff MMAC/s** — effective int8 throughput, `(MACs per second of audio) /
+  RTF`. The workload constant belongs to the stack, not the project: 19 for
+  the 294k nano, 45 for the 567k R7. The sketch prints `n/a` rather than
+  borrow another graph's figure.
 - **corr / rms_ratio** — correctness against the shipped golden fixture.
   Gates are `corr > 0.98` and `0.80 < rms_ratio < 1.25`. **A speed number
   without a passing correctness gate is not a result** — correlation alone is
@@ -26,67 +29,84 @@ then Arduino IDE → *Sketch → Include Library → Add .ZIP Library…* →
 
 ## Requirements
 
-- **Flash: ~820 KB** (731 KB of embedded weights plus code). This is a hard
-  floor — a 512 KB-flash part cannot hold the sketch at all. Verified: the
-  Nucleo-F411RE link fails with `region 'FLASH' overflowed by 263976 bytes`.
-- **Free heap: 88 KB minimum.** The sketch walks a ladder from 320 KB down to
-  88 KB and takes the largest arena `malloc` will give it. Measured on the
-  host against this fixture, output is **bit-identical at every rung** —
-  corr 0.989148, rms_ratio 0.935022 from 88 KB all the way to 320 KB. Below
-  88 KB the runtime reports `ARENA OOM` and stops.
-- Spare arena is **speed, not correctness**: it holds opportunistic
-  weight-residency buffers that keep decoder weights out of flash. So an RTF
-  measured with a 96 KB arena is not comparable to one measured with 320 KB
-  even on the same chip. That is why every report includes `arena_bytes`.
+The shipped example runs **en_us_e12nano** (294,642 params), the only nano
+lineage with measurements on real silicon.
 
-## Build-verified boards
-
-22 targets compile and link today (arduino-cli 1.5.2). Building is not
-measuring — every one of these still needs someone to flash it and post
-numbers.
-
-**Espressif** (`esp32:esp32` 3.3.11) — ESP32-S3, ESP32-C3, ESP32 classic,
-ESP32-P4, ESP32-S2, ESP32-C6, ESP32-H2
-
-**Teensy** (`teensy:avr` 1.62.0) — 4.1, 4.0, MicroMod, 3.6
-
-**Raspberry Pi** (`rp2040:rp2040` 6.0.0) — Pico (RP2040), Pico 2 (RP2350)
-
-**STM32** (`STMicroelectronics:stm32` 3.0.0) — Nucleo-H743ZI2, Nucleo-F767ZI,
-Nucleo-F429ZI
-
-**Arduino brand** (`arduino:mbed_*` 4.6.0) — GIGA R1 WiFi, Portenta H7
-(needs a non-default flash split, below), Nicla Vision, Opta, Nano 33 BLE,
-Nano RP2040 Connect
-
-Notes:
-
-- **Portenta H7** defaults to a 50/50 M7/M4 flash split, leaving the sketch
-  1 MB and overflowing by 132,264 bytes. `split=75_25` or `split=100_0` links.
-- The **Arduino mbed cores define no `F_CPU`**, so `cpu_hz` reports `unknown`
-  there. RTF is measured directly, so this costs nothing.
-
-## Known not to fit
-
-Flash is the wall, not speed. Measured link failures:
-
-| Board | Flash | Short by |
-|---|---|---|
-| Arduino UNO R4 WiFi | 256 KB | 576,884 B |
-| Arduino MKR Zero (SAMD21) | 256 KB | over 1 MB |
-| Teensy 3.5 | 512 KB | 287,872 B |
-| Nucleo-F411RE | 512 KB | 264,168 B |
-
-Anything in the 256–512 KB flash class is out; there is no flag that shrinks
-the weights.
+- **Flash: ~500 KB** (399 KB of embedded weights + reference, plus code).
+- **Free heap: 136 KB minimum** for the embedded row (415 frames, 4.81 s).
+  The arena is `46.5 KB fixed + 195.7 B/frame` (measured, r2 0.9998), so a
+  shorter utterance needs less. The sketch walks a ladder from 320 KB down to
+  the floor and takes the largest one `malloc` gives it; output is identical
+  at every rung, so the extra space is speed, not correctness.
+- `arena_peak` measured **128,944 B** -- identical on the host, on the Arduino
+  build and in the ESP-IDF port. It is in every board report.
 
 ## Measured
 
-| Board | MCU | Clock | RTF | eff MMAC/s | corr | Kernels | Source |
-|---|---|---:|---:|---:|---:|---|---|
-| ESP32-S3 devkit | Xtensa LX7 ×2, PIE SIMD | 240 MHz | **0.22** | ~205 | 0.985 | PIE asm + esp-nn | ours |
-| ESP32-C3 | RV32IMC, no FPU | 160 MHz | **5.72** | ~7.9 | pass | scalar ref | ours |
-| host (POSIX) | — | — | — | — | 0.989148 | scalar ref | CI gate |
+Correctness gates: `corr > 0.98`, `0.80 < rms_ratio < 1.25`. **A speed number
+without a passing correctness gate is not a result.**
+
+### ESP32-S3, Arduino core, portable scalar kernels -- 2026-09-04
+
+Same board (rev v0.2, 240 MHz, 16 MB flash), same sketch, same kernels; only
+the model differs. This is what the Arduino library actually delivers today.
+
+| Model | Params | RTF | eff MMAC/s | corr | rms_ratio | Flash data |
+|---|---:|---:|---:|---:|---:|---:|
+| **en_us_e12nano** | 294,642 | **1.5825** | 28.4 | 0.994664 | 0.989009 | 399 KB |
+| en_us_r7 | 567,008 | 3.6948 | 12.2 | 0.989048 | 0.944609 | 731 KB |
+
+**The 294k model is 2.33x faster, 1.83x smaller, and correlates better.**
+Host and device agree exactly on the nano (corr 0.994664 both, arena_peak
+128,944 B both); R7 drifts by 1e-4, which is float ordering.
+
+### ESP-IDF ports with SIMD kernels
+
+Not comparable to the rows above -- these use the PIE assembly and esp-nn,
+which the portable Arduino library does not ship.
+
+| Board | MCU | Model | RTF | corr | Source |
+|---|---|---|---:|---:|---|
+| ESP32-S3 | Xtensa LX7, PIE SIMD | e12nano | **0.185** | 0.9848 | 2026-08-22 |
+| ESP32-S3 | Xtensa LX7, PIE SIMD | r7 | 0.22 | 0.985 | earlier |
+| ESP32-C3 | RV32IMC, scalar | r7 | 5.72 | pass | earlier |
+
+**The largest speed lever is SIMD, not the model.** The same 294k stack is
+1.58 xRT with portable C and 0.185 xRT with the S3 vector kernels -- 8.5x from
+kernels alone. Residency matters as much: backed by PSRAM instead of internal
+SRAM the IDF port measures 1.059 instead of 0.185, a 5.7x penalty from where
+the weights live.
+
+## Build-verified boards
+
+22 targets compile and link with the 294k example (arduino-cli 1.5.2).
+Building is not measuring -- only the ESP32-S3 rows above are measured.
+
+- **Espressif** -- ESP32-S3, C3, classic, P4, S2, C6, H2
+- **Teensy** -- 4.1, 4.0, MicroMod, 3.6, **3.5**
+- **Raspberry Pi** -- Pico (RP2040), Pico 2 (RP2350)
+- **STM32** -- Nucleo-H743ZI2, F767ZI, F429ZI, **F411RE**
+- **Arduino** -- GIGA R1 WiFi, Portenta H7, Nicla Vision, Opta, Nano 33 BLE,
+  Nano RP2040 Connect
+- **Adafruit SAMD51** -- **Metro M4**, **Feather M4**
+
+Bold entries are newly possible at 294k; they could not fit the 567k model.
+Portenta H7 no longer needs a non-default flash split, and Nano 33 BLE drops
+from 87% of flash to 52%.
+
+### Compiles but will not run
+
+**Nucleo-F411RE** links at 85% of flash but leaves only ~48 KB of RAM, under
+the 136 KB floor, so it prints `FATAL: could not allocate` instead of a
+number. A shorter fixture row would bring it into range.
+
+### Known not to fit
+
+| Board | Flash | Note |
+|---|---|---|
+| Arduino UNO R4 WiFi | 256 KB | `.text` will not fit |
+| Arduino MKR Zero | 256 KB | far short |
+| Adafruit Grand Central M4 | -- | fqbn not present in adafruit:samd 1.7.17 |
 
 ## Wanted — highest value first
 
@@ -99,6 +119,8 @@ the weights.
 | Renesas RA8M1 / RA8D1 | Cortex-M85 + Helium | V | <0.1× RT | wanted |
 | ESP32-P4 | RV32 + vendor SIMD | V | real-time | wanted |
 | Raspberry Pi Pico / Pico 2 | RP2040 / RP2350 | S | offline | **builds, never measured** |
+| Adafruit Metro / Feather M4 | SAMD51, Cortex-M4F | S | offline | **newly fits at 294k** |
+| Teensy 3.5 | Cortex-M4F 120 MHz | S | offline | **newly fits at 294k** |
 | ESP32 (classic) | Xtensa LX6, no PIE | S/D | between C3 and S3 | wanted |
 | Any Cortex-M4F ≥168 MHz | — | S | offline / short utterances | wanted |
 

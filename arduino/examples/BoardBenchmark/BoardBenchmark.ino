@@ -44,9 +44,17 @@
  * and Nucleo-H743ZI2 (arduino-cli 1.5.2). See BOARDS.md.
  */
 #include <SanoTTS.h>
-#include <snt_tts.h>
 
+/* The generated header says which stack it holds; the two runtimes have the
+ * same shape but are not the same API, and the nano decoder is noise-fed so
+ * it additionally needs the row's seed. Selecting here rather than by hand
+ * means regenerating the header is the only step to switch model. */
 #include "sanotts_bench_data.h"
+#if SANOTTS_BENCH_NANO
+#  include <snt_nano.h>
+#else
+#  include <snt_tts.h>
+#endif
 
 /* ---- board identity -------------------------------------------------
  * Auto-detected, so a first flash produces an attributable report with no
@@ -116,9 +124,17 @@ static const long CPU_CLOCK_HZ = F_CPU;
  * request carries 16 spare bytes. */
 static const size_t ARENA_LADDER[] = {
   320u * 1024u, 256u * 1024u, 192u * 1024u, 160u * 1024u,
-  128u * 1024u, 112u * 1024u,  96u * 1024u,  88u * 1024u,
+  144u * 1024u, 136u * 1024u, 128u * 1024u, 112u * 1024u,
+   96u * 1024u,  88u * 1024u,
 };
+#if SANOTTS_BENCH_NANO
+/* Measured on the host for this row (415 frames): peak 128,944 B. The nano
+ * arena is 46.5 KB fixed + ~196 B/frame, so a longer row costs more; this
+ * floor is for the row actually embedded above. */
+static const size_t ARENA_FLOOR = 136u * 1024u;
+#else
 static const size_t ARENA_FLOOR = 88u * 1024u;
+#endif
 
 /* Build with -DSANOTTS_BENCH_MAX_ARENA=<bytes> to skip the larger rungs.
  * Useful if malloc on your core succeeds but leaves the rest of the sketch
@@ -159,6 +175,7 @@ static void run_benchmark() {
   size_t arena_size = 0;
   for (size_t i = 0; i < sizeof ARENA_LADDER / sizeof ARENA_LADDER[0]; i++) {
     if (ARENA_LADDER[i] > (size_t)SANOTTS_BENCH_MAX_ARENA) continue;
+    if (ARENA_LADDER[i] < ARENA_FLOOR) break;
     arena = (uint8_t *)malloc(ARENA_LADDER[i] + 16);
     if (arena) { arena_size = ARENA_LADDER[i] + 16; break; }
   }
@@ -175,12 +192,23 @@ static void run_benchmark() {
   CorrSink sink;
   memset(&sink, 0, sizeof sink);
 
+#if SANOTTS_BENCH_NANO
+  snt_nano_config cfg;
+  snt_nano_stats  st;
+#else
   snt_config cfg;
+  snt_stats  st;
+#endif
   memset(&cfg, 0, sizeof cfg);
   cfg.front_blob = SANOTTS_BENCH_FRONT_Q8;
   cfg.dec_blob   = SANOTTS_BENCH_MODEL_Q8;
   cfg.arena      = arena;
   cfg.arena_size = arena_size;
+#if SANOTTS_BENCH_NANO
+  /* Noise-fed decoder: with any other seed the output is a different, equally
+   * valid waveform and the correlation against the reference is meaningless. */
+  cfg.noise_seed = SANOTTS_BENCH_SEED;
+#endif
   /* Pass the golden durations so every board synthesizes the SAME 134
    * frames. Letting the duration model predict its own timing would change
    * the output length per build and make both the correlation gate and the
@@ -188,22 +216,29 @@ static void run_benchmark() {
    * does, and it is why the numbers below can be compared at all. */
   cfg.dur_override = SANOTTS_BENCH_DURS;
 
-  snt_stats st;
   memset(&st, 0, sizeof st);
 
   const uint32_t t_start = micros();
+#if SANOTTS_BENCH_NANO
+  const int rc = snt_nano_synthesize(&cfg, SANOTTS_BENCH_IDS, SANOTTS_BENCH_N_IDS,
+                                     corr_cb, &sink, &st);
+#else
   const int rc = snt_synthesize(&cfg, SANOTTS_BENCH_IDS, SANOTTS_BENCH_N_IDS,
                                 corr_cb, &sink, &st);
+#endif
   const uint32_t t_end = micros();
 
   const double elapsed_s = (double)(t_end - t_start) / 1e6;
   const double audio_s   = (double)st.samples / (double)SANOTTS_BENCH_SAMPLE_RATE;
   const double rtf       = (audio_s > 0.0) ? elapsed_s / audio_s : 0.0;
 
-  /* The workload is a measured constant: ~45 MMAC/s of int8 per second of
-   * audio (docs/mcu-classes-and-porting.md section 1). Effective throughput
-   * is therefore just 45 / RTF -- this is the number that classifies a chip. */
-  const double eff_mmacs = (rtf > 0.0) ? 45.0 / rtf : 0.0;
+  /* Effective int8 throughput = (MACs per second of audio) / RTF. The
+   * workload constant belongs to the STACK, not the project: R7 is 45 MMAC/s
+   * and the 294k nano is 19. Using one for the other reports a throughput the
+   * chip never delivered, so the generator emits the right one and this
+   * prints n/a when the lineage has no measured figure. */
+  const double eff_mmacs = (rtf > 0.0 && SANOTTS_BENCH_MMAC_PER_S > 0.0f)
+                             ? (double)SANOTTS_BENCH_MMAC_PER_S / rtf : 0.0;
 
   const double n = (double)sink.pos;
   double corr = 0.0, rms_ratio = 0.0;
@@ -222,6 +257,7 @@ static void run_benchmark() {
   Serial.println();
   Serial.println(F("---- REPORT (paste this whole block) ----"));
   Serial.print(F("board:        ")); Serial.println(g_board);
+  Serial.print(F("model:        ")); Serial.println(F(SANOTTS_BENCH_MODEL));
   Serial.print(F("cpu_hz:       "));
   if (CPU_CLOCK_HZ > 0) Serial.println(CPU_CLOCK_HZ);
   else Serial.println(F("unknown -- please add your board's clock"));
@@ -230,10 +266,15 @@ static void run_benchmark() {
   Serial.print(F("frames:       ")); Serial.println(st.frames);
   Serial.print(F("samples:      ")); Serial.println(st.samples);
   Serial.print(F("compared:     ")); Serial.println((unsigned long)sink.pos);
+#if SANOTTS_BENCH_NANO
+  Serial.print(F("arena_peak:   ")); Serial.println((unsigned long)st.arena_peak);
+#endif
   Serial.print(F("audio_s:      ")); Serial.println(audio_s, 4);
   Serial.print(F("elapsed_s:    ")); Serial.println(elapsed_s, 4);
   Serial.print(F("RTF:          ")); Serial.println(rtf, 4);
-  Serial.print(F("eff_MMAC_s:   ")); Serial.println(eff_mmacs, 1);
+  Serial.print(F("eff_MMAC_s:   "));
+  if (eff_mmacs > 0.0) Serial.println(eff_mmacs, 1);
+  else Serial.println(F("n/a (no measured MAC count for this stack)"));
   Serial.print(F("golden_corr:  ")); Serial.println(corr, 6);
   Serial.print(F("rms_ratio:    ")); Serial.println(rms_ratio, 6);
   Serial.print(F("verdict:      ")); Serial.println(pass ? F("PASS") : F("FAIL"));
