@@ -77,6 +77,26 @@ The 294k model is 2.33x faster, 1.83x smaller and correlates better. Host and
 device agree exactly on it (`arena_peak` 128,944 B on host, on the Arduino
 build and in the ESP-IDF port).
 
+### ESP32 classic (ESP32-D0WD-V3, 240 MHz, 4 MB) -- 2026-09-04
+
+**Does not run the shipped row.** It flashes and boots fine, and the sketch
+reports why:
+
+```
+FATAL: could not allocate the 139264 byte minimum arena.
+  free heap:      250040
+  largest block:  110580
+```
+
+250 KB free but the largest *contiguous* block is 110,580 B, and the arena
+must be one piece. Classic-ESP32 internal DRAM is split into regions that
+never coalesce, so total free heap badly overstates what it can hand out.
+Xtensa LX6 also has no PIE unit, so it would take the scalar path regardless.
+
+At 46.5 KB + 195.7 B/frame, 110,580 B supports about **321 frames (~3.7 s)**.
+The shipped row is 415 frames, so this chip needs a shorter fixture, not more
+memory. Same story for Nucleo-F411RE.
+
 ### ESP-IDF ports with SIMD kernels
 
 Not comparable to the rows above -- these use the PIE assembly and esp-nn,

@@ -183,9 +183,19 @@ static void run_benchmark() {
     Serial.print(F("FATAL: could not allocate the "));
     Serial.print((unsigned long)ARENA_FLOOR);
     Serial.println(F(" byte minimum arena."));
-    Serial.println(F("This board does not have enough free RAM for the"));
-    Serial.println(F("whole-utterance path. See docs/mcu-classes-and-porting.md"));
-    Serial.println(F("for the streaming variant, and please still open an issue."));
+    /* Total free heap is the wrong number to look at and the reason this
+     * failure is confusing: the arena must be ONE contiguous block, and on
+     * several cores internal RAM is split into regions that never coalesce.
+     * A board can report far more free heap than it can hand out at once. */
+#if defined(ARDUINO_ARCH_ESP32)
+    Serial.print(F("  free heap:      ")); Serial.println((unsigned long)ESP.getFreeHeap());
+    Serial.print(F("  largest block:  ")); Serial.println((unsigned long)ESP.getMaxAllocHeap());
+    Serial.println(F("  (the arena needs ONE contiguous block, not total free heap)"));
+#endif
+    Serial.println(F("This board cannot run the whole-utterance path at this"));
+    Serial.println(F("length. The arena is ~46.5 KB fixed + 196 B per frame, so a"));
+    Serial.println(F("shorter utterance would fit. Please open an issue with the"));
+    Serial.println(F("two numbers above -- a reproducible FAIL is useful."));
     return;
   }
 
