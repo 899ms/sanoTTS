@@ -105,15 +105,6 @@ def load_fixture(fixture, row_index):
     return front, model, ids, durs, audio, int(seed), True
 
 
-# int8 MACs per second of audio, per stack. This is NOT a shared constant:
-# it is a property of the graph, and using one stack's figure for another
-# silently reports a wrong throughput. Sources:
-#   en_us_r7        45.0  -- docs/mcu-classes-and-porting.md section 1
-#   en_us_e12nano   19.0  -- 138,507,952 MACs over r06 (160,768 samples,
-#                            7.291 s) from the ESP32-S3 residency counters,
-#                            experiments/evidence/serial-logs/, 2026-08-22
-# A lineage that is not listed emits 0, and the sketch then prints "n/a"
-# rather than a number derived from someone else's graph.
 # Arena cost, measured by fitting per-row arena_peak against frame count
 # (r2 0.9998): the runtime needs a fixed block plus a per-frame term, and it
 # must be ONE contiguous allocation. Used to estimate the sketch's floor when
@@ -122,9 +113,26 @@ ARENA_FIXED_BYTES = 47_616
 ARENA_BYTES_PER_FRAME = 196
 ARENA_MARGIN_BYTES = 8 * 1024
 
+# int8 MACs per second of audio, per stack. This is NOT a shared constant: it
+# is a property of the graph, and using one stack's figure for another reports
+# a throughput the chip never delivered.
+#
+# Both figures are COUNTED, not cited. The reference kernels were instrumented
+# to accumulate len (dot) and rows*len (matvec), and one whole utterance was
+# synthesized on the host:
+#   en_us_e12nano   56,822,976 MACs / 2.9489 s = 19.27 MMAC/s
+#   en_us_r7        69,155,808 MACs / 1.5557 s = 44.45 MMAC/s
+# Both stacks issue zero int16xint8 MACs, so int8 is the entire workload.
+#
+# The r7 value replaces a cited 45.0 and agrees with it to 1.2%. The nano
+# value replaces 19.0, which had been scaled from an ESP32-S3 residency log
+# for a different row rather than measured on this one.
+#
+# A lineage not listed here emits 0 and the sketch prints "n/a", rather than a
+# number derived from someone else's graph.
 MMAC_PER_SECOND = {
-    "en_us_r7": 45.0,
-    "en_us_e12nano": 19.0,
+    "en_us_r7": 44.45,
+    "en_us_e12nano": 19.27,
 }
 
 

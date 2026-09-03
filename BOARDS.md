@@ -1,8 +1,8 @@
 # Board results
 
-saanoTTS on real silicon. **Two boards are measured on the Arduino path** --
-an ESP32-S3 at **0.41 xRT, 2.4x faster than real time**, and a classic ESP32
-at 2.17 xRT. Both below. Everything else here is either a projection or an empty row
+saanoTTS on real silicon. **Three boards are measured on the Arduino path**,
+and the fastest is a community report: a Nucleo-H755ZI-Q at **0.35 xRT, 2.9x
+faster than real time**. All three below. Everything else here is either a projection or an empty row
 waiting for someone with the hardware.
 
 If you have one of these boards, `arduino/examples/BoardBenchmark` is a single
@@ -78,12 +78,26 @@ The 294k model is 2.33x faster, 1.83x smaller and correlates better. Host and
 device agree exactly on it (`arena_peak` 128,944 B on host, on the Arduino
 build and in the ESP-IDF port).
 
-### Both chips, short row (255 frames, 2.95 s) -- 2026-09-04
+### Measured boards, short row (255 frames, 2.95 s) -- 2026-09-04
 
-| Board | MCU | Kernels | RTF | vs real time | eff MMAC/s | corr |
-|---|---|---|---:|---:|---:|---:|
-| ESP32-S3 | Xtensa LX7 | **PIE SIMD** | **0.4107** | **2.4x faster** | 46.3 | 1.000000 |
-| ESP32 classic | Xtensa LX6 | scalar | 2.1720 | 0.46x | 8.7 | 1.000000 |
+| Board | MCU | Clock | Kernels | RTF | vs real time | eff MMAC/s | corr |
+|---|---|---:|---|---:|---:|---:|---:|
+| **Nucleo-H755ZI-Q** | Cortex-M7 | 480 MHz | scalar | **0.3498** | **2.9x faster** | 55.1 | 1.000000 |
+| ESP32-S3 | Xtensa LX7 | 240 MHz | **PIE SIMD** | 0.4107 | 2.4x faster | 46.9 | 1.000000 |
+| ESP32 classic | Xtensa LX6 | 240 MHz | scalar | 2.1720 | 0.46x | 8.9 | 1.000000 |
+
+The H755 row is a **community report** (selected as Nucleo H745ZI-Q, which is
+that die), and it is the first Cortex-M7 measurement of any kind.
+
+**A 480 MHz M7 running portable scalar C beats a 240 MHz ESP32-S3 running
+hand-written vector assembly.** Clock accounts for 2x of that; the rest is the
+M7's dual-issue pipeline and its 64-bit AXI path to SRAM against the LX6/LX7
+load-store path. It also means the M7 number is a floor, not a ceiling --
+nothing SIMD is being used on it. CMSIS-NN or Helium on an M55/M85 is the
+obvious next lever.
+
+All three reproduce the host reference **exactly**, and `arena_peak` is
+98,224 B on every one of them plus the host.
 
 Both reproduce the host reference **exactly**, which is the point of this
 gate: an LX6 running scalar C and an LX7 running hand-written vector assembly
@@ -154,7 +168,9 @@ mentions and nothing else claims. The arena is CPU-only -- no DMA, no shared
 peripheral. The report prints `arena_src` so you can see which was used, and
 `-DSANOTTS_NO_H7_AXI_SRAM` forces malloc back.
 
-*Compile-verified on H745ZI-Q and H743ZI2; not yet run on H7 hardware.*
+**Confirmed on hardware.** A Nucleo-H755ZI-Q reports
+`arena_src: AXI SRAM @0x24000000`, `corr 1.000000`, RTF 0.3498 -- the AXI
+SRAM path works and is the reason that board runs at all.
 
 ### Compiles but will not run
 
@@ -178,8 +194,8 @@ rather than just that it failed.
 
 | Board | MCU | Class | Prediction | Status |
 |---|---|---|---|---|
-| **Teensy 4.0 / 4.1** | i.MX RT1062, Cortex-M7 | D | 0.2–0.5× RT | **wanted** |
-| **Nucleo-H743 / H7 family** | STM32H7, Cortex-M7 | D | 0.2–0.5× RT | **wanted** |
+| **Teensy 4.0 / 4.1** | i.MX RT1062, Cortex-M7 | D | ~0.3× RT | **wanted** |
+| Nucleo-H743 / H7 family | STM32H7, Cortex-M7 | D | 0.2–0.5× RT | **MEASURED 0.35** |
 | i.MX RT1060 EVK | Cortex-M7 | D | 0.2–0.5× RT | wanted |
 | Alif Ensemble E7 | Cortex-M55 + Helium | V | <0.1× RT | wanted |
 | Renesas RA8M1 / RA8D1 | Cortex-M85 + Helium | V | <0.1× RT | wanted |
