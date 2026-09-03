@@ -1,7 +1,7 @@
 # Board results
 
-saanoTTS on real silicon. **One board is measured on the Arduino path**
-(ESP32-S3, below). Everything else here is either a projection or an empty row
+saanoTTS on real silicon. **One board is measured on the Arduino path** --
+an ESP32-S3, at **0.38 xRT, 2.6x faster than real time**, below. Everything else here is either a projection or an empty row
 waiting for someone with the hardware.
 
 If you have one of these boards, `arduino/examples/BoardBenchmark` is a single
@@ -46,19 +46,36 @@ lineage with measurements on real silicon.
 Correctness gates: `corr > 0.98`, `0.80 < rms_ratio < 1.25`. **A speed number
 without a passing correctness gate is not a result.**
 
-### ESP32-S3, Arduino core, portable scalar kernels -- 2026-09-04
+### ESP32-S3, Arduino library -- 2026-09-04
 
-Same board (rev v0.2, 240 MHz, 16 MB flash), same sketch, same kernels; only
-the model differs. This is what the Arduino library actually delivers today.
+The library now assembles the Xtensa LX7 PIE SIMD int8 kernels automatically
+when the target is an ESP32-S3. Nothing to configure.
 
-| Model | Params | RTF | eff MMAC/s | corr | rms_ratio | Flash data |
-|---|---:|---:|---:|---:|---:|---:|
-| **en_us_e12nano** | 294,642 | **1.5825** | 28.4 | 0.994664 | 0.989009 | 399 KB |
-| en_us_r7 | 567,008 | 3.6948 | 12.2 | 0.989048 | 0.944609 | 731 KB |
+| Build | RTF | vs real time | eff MMAC/s | corr |
+|---|---:|---:|---:|---:|
+| **SIMD (shipped default)** | **0.3828** | **2.6x faster** | 49.6 | 0.994664 |
+| SIMD + `SANOTTS_ESP32_DUALCORE` | 0.3863 | 2.6x | 49.2 | 0.994664 |
+| scalar C (previous default) | 1.5825 | 0.63x | 12.0 | 0.994664 |
+| scalar + `SANOTTS_ESP32_DUALCORE` | 1.5856 | 0.63x | 12.0 | 0.994664 |
 
-**The 294k model is 2.33x faster, 1.83x smaller, and correlates better.**
-Host and device agree exactly on the nano (corr 0.994664 both, arena_peak
-128,944 B both); R7 drifts by 1e-4, which is float ordering.
+**SIMD is a 4.13x speedup and crosses the real-time line.** All four builds
+emit bit-identical audio -- correlation is 0.994664 in every one, and equal to
+the host. The vector unit changes the speed and nothing else.
+
+**The second core does nothing for this workload.** Dual-core is marginally
+*slower* in both pairs (0.2% and 0.9%, within run-to-run spread). The flag
+remains available but is not worth setting here.
+
+Model comparison, same board and same scalar kernels, only the model differing:
+
+| Model | Params | RTF (scalar) | corr | Flash data |
+|---|---:|---:|---:|---:|
+| **en_us_e12nano** | 294,642 | **1.5825** | 0.994664 | 399 KB |
+| en_us_r7 | 567,008 | 3.6948 | 0.989048 | 731 KB |
+
+The 294k model is 2.33x faster, 1.83x smaller and correlates better. Host and
+device agree exactly on it (`arena_peak` 128,944 B on host, on the Arduino
+build and in the ESP-IDF port).
 
 ### ESP-IDF ports with SIMD kernels
 
@@ -71,11 +88,15 @@ which the portable Arduino library does not ship.
 | ESP32-S3 | Xtensa LX7, PIE SIMD | r7 | 0.22 | 0.985 | earlier |
 | ESP32-C3 | RV32IMC, scalar | r7 | 5.72 | pass | earlier |
 
-**The largest speed lever is SIMD, not the model.** The same 294k stack is
-1.58 xRT with portable C and 0.185 xRT with the S3 vector kernels -- 8.5x from
-kernels alone. Residency matters as much: backed by PSRAM instead of internal
-SRAM the IDF port measures 1.059 instead of 0.185, a 5.7x penalty from where
-the weights live.
+**The largest speed lever is SIMD, not the model** -- 4.13x, measured above.
+The Arduino library now gets 0.383 xRT; the IDF port reaches 0.185 with
+esp-nn's tuned single-row dot and further tuning the library does not vendor,
+so 2.1x is still on the table.
+
+Residency matters as much: PIE vector loads against flash-XIP silently return
+garbage (corr 0.011), so the runtime stages weights into the arena and
+dispatches SIMD only for internal SRAM. Backed by PSRAM instead, the IDF port
+measures 1.059 rather than 0.185 -- a 5.7x penalty from where weights live.
 
 ## Build-verified boards
 

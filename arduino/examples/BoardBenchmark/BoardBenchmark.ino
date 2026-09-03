@@ -301,6 +301,9 @@ void setup() {
   Serial.begin(115200);
   unsigned long t0 = millis();
   while (!Serial && millis() - t0 < 4000) { /* USB CDC boards need a moment */ }
+  /* No-op unless the build enabled the ESP32 second-core worker. Declared
+   * unconditionally, so this line is safe on every core. */
+  snt_port_dualcore_start();
   run_benchmark();
 }
 
