@@ -84,7 +84,16 @@
 #endif
 
 static const char *g_board = SANOTTS_BOARD;
-static const long  CPU_CLOCK_HZ = F_CPU;   /* most cores define F_CPU */
+
+/* The Arduino mbed cores -- GIGA R1, Portenta H7, Nicla, Opta, Nano 33 BLE,
+ * Nano RP2040 Connect -- define no F_CPU at all, so taking it unguarded fails
+ * to compile on every one of them. The clock is only metadata here: RTF is
+ * measured directly, not derived from it, so an unknown clock costs nothing.
+ * Set -DF_CPU=<hz> if you want it filled in. */
+#ifndef F_CPU
+#define F_CPU 0L
+#endif
+static const long CPU_CLOCK_HZ = F_CPU;
 
 /* ---- working arena ----------------------------------------------------
  * Measured on the host against this exact fixture (mcu/test/fixtures/en_us_r7,
@@ -213,7 +222,9 @@ static void run_benchmark() {
   Serial.println();
   Serial.println(F("---- REPORT (paste this whole block) ----"));
   Serial.print(F("board:        ")); Serial.println(g_board);
-  Serial.print(F("cpu_hz:       ")); Serial.println(CPU_CLOCK_HZ);
+  Serial.print(F("cpu_hz:       "));
+  if (CPU_CLOCK_HZ > 0) Serial.println(CPU_CLOCK_HZ);
+  else Serial.println(F("unknown -- please add your board's clock"));
   Serial.print(F("arena_bytes:  ")); Serial.println((unsigned long)arena_size);
   Serial.print(F("rc:           ")); Serial.println(rc);
   Serial.print(F("frames:       ")); Serial.println(st.frames);

@@ -3,9 +3,9 @@
 Flash one sketch, get one block of numbers, paste it into an issue. No DAC,
 no SD card, no filesystem — the only peripheral is Serial.
 
-Needs ~820 KB flash and 88 KB free RAM. Every board below has been
-compile-verified (arduino-cli 1.5.2). None has been measured yet — that is
-what you are here for.
+Needs ~820 KB flash and 88 KB free RAM. **22 boards are compile-verified**
+(arduino-cli 1.5.2); none has been measured yet — that is what you are here
+for.
 
 ## 1. Install the library (all boards)
 
@@ -65,10 +65,36 @@ pick the board.
   default, *Enabled (generic Serial)*.
 - 512 KB-flash parts (e.g. Nucleo-F411RE) do not fit; the linker will say so.
 
+### Arduino GIGA R1 / Portenta H7 / Nicla Vision / Opta / Nano 33 BLE / Nano RP2040 Connect
+
+- No extra URL needed — install **Arduino Mbed OS \<family\> Boards** from
+  Boards Manager (4.6.x).
+- **Portenta H7 only:** the default flash split gives the M7 just 1 MB and the
+  sketch overflows it by 132,264 bytes. Set **Tools → Flash split →
+  `1.5MB M7 + 0.5MB M4`** (or `2MB M7 + M4 in SDRAM`) and it links.
+- These cores define no `F_CPU`, so `cpu_hz` prints `unknown`. That is
+  expected and harmless — RTF is measured, not derived from the clock. Put
+  your board's clock in the issue instead.
+
 ### Something else
 
-If it has ≥1 MB flash, ≥128 KB RAM and an Arduino core, try it. It either
-links or the linker tells you exactly why not.
+If it has ≥1 MB of flash available to the sketch, ≥128 KB RAM and an Arduino
+core, try it. It either links or the linker tells you exactly why not.
+
+## Known not to fit
+
+Flash, not speed, is the wall. These fail at link with a clear message:
+
+| Board | Flash short by |
+|---|---|
+| Arduino UNO R4 WiFi | 576,884 B |
+| Arduino MKR Zero (SAMD21) | 1 MB+ |
+| Teensy 3.5 | 287,872 B |
+| Nucleo-F411RE | 264,168 B |
+| Portenta H7 at default 50/50 split | 132,264 B (fix above) |
+
+Anything with 256–512 KB of flash is out. There is no build flag that shrinks
+the weights.
 
 ## 3. Run it
 
@@ -129,6 +155,16 @@ arduino-cli monitor -p <port> -c baudrate=115200
 | Pico | `rp2040:rp2040:rpipico` |
 | Pico 2 | `rp2040:rp2040:rpipico2` |
 | Nucleo-H743ZI2 | `STMicroelectronics:stm32:Nucleo_144:pnum=NUCLEO_H743ZI2` |
+| Nucleo-F767ZI | `STMicroelectronics:stm32:Nucleo_144:pnum=NUCLEO_F767ZI` |
+| Nucleo-F429ZI | `STMicroelectronics:stm32:Nucleo_144:pnum=NUCLEO_F429ZI` |
+| GIGA R1 WiFi | `arduino:mbed_giga:giga` |
+| Portenta H7 | `arduino:mbed_portenta:envie_m7:split=75_25` |
+| Nicla Vision | `arduino:mbed_nicla:nicla_vision` |
+| Opta | `arduino:mbed_opta:opta` |
+| Nano 33 BLE | `arduino:mbed_nano:nano33ble` |
+| Nano RP2040 Connect | `arduino:mbed_nano:nanorp2040connect` |
+| ESP32-P4 / S2 / C6 / H2 | `esp32:esp32:esp32p4` / `esp32s2` / `esp32c6` / `esp32h2` |
+| Teensy MicroMod | `teensy:avr:teensyMM` |
 
 ## Regenerating the data header
 
