@@ -7,6 +7,11 @@ If you have one of these boards, `arduino/examples/BoardBenchmark` is a single
 sketch with no peripherals — no DAC, no SD card, no filesystem — that prints a
 report block. [Open an issue with it.](../../issues/new?template=board-report.yml)
 
+Install: download
+[SanoTTS.zip](https://github.com/Ampixa/sanoTTS/releases/download/arduino-lib-0.1.0/SanoTTS.zip),
+then Arduino IDE → *Sketch → Include Library → Add .ZIP Library…* →
+*File → Examples → SanoTTS → BoardBenchmark*.
+
 ## What the numbers mean
 
 - **RTF** — seconds of compute per second of audio. `RTF < 1.0` is faster than

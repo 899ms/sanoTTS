@@ -9,22 +9,13 @@ for.
 
 ## 1. Install the library (all boards)
 
-```bash
-git clone https://github.com/Ampixa/sanoTTS
-```
+1. Download **[SanoTTS.zip](https://github.com/Ampixa/sanoTTS/releases/download/arduino-lib-0.1.0/SanoTTS.zip)** (1.1 MB).
+2. Arduino IDE → **Sketch → Include Library → Add .ZIP Library…** → pick it.
+3. **File → Examples → SanoTTS → BoardBenchmark**.
 
-Copy the `arduino/` folder into your sketchbook `libraries/` as `SanoTTS`:
-
-| OS | destination |
-|---|---|
-| Windows | `Documents\Arduino\libraries\SanoTTS` |
-| macOS | `~/Documents/Arduino/libraries/SanoTTS` |
-| Linux | `~/Arduino/libraries/SanoTTS` |
-
-Restart the Arduino IDE. **File → Examples → SanoTTS → BoardBenchmark**.
-
-Do not use *Add .ZIP Library* on the GitHub download — `library.properties`
-is inside `arduino/`, not at the zip root, and the IDE will reject it.
+Use that zip, not GitHub's green *Code → Download ZIP*: `library.properties`
+lives inside `arduino/` rather than at the archive root, so the IDE rejects
+the source download. The release asset is rooted correctly.
 
 ## 2. Select your board
 
@@ -75,6 +66,9 @@ pick the board.
 - These cores define no `F_CPU`, so `cpu_hz` prints `unknown`. That is
   expected and harmless — RTF is measured, not derived from the clock. Put
   your board's clock in the issue instead.
+- **Nano 33 BLE** fits, but only just: 87% of its 983 KB. It reports about
+  160 KB of free RAM, so it runs on a middle rung of the arena ladder rather
+  than the top one — that is fine, and `arena_bytes` will say which.
 
 ### Something else
 
@@ -136,11 +130,16 @@ playback.
 
 ## arduino-cli (optional)
 
-Same thing without the IDE. Library goes in `libraries/SanoTTS` under your
-sketchbook as above.
+Same thing without the IDE:
 
 ```bash
-arduino-cli compile --upload -p <port> --fqbn <fqbn> libraries/SanoTTS/examples/BoardBenchmark
+arduino-cli config set library.enable_unsafe_install true
+arduino-cli lib install --zip-path SanoTTS.zip
+```
+
+```bash
+SKETCH=~/Arduino/libraries/SanoTTS/examples/BoardBenchmark
+arduino-cli compile --upload -p <port> --fqbn <fqbn> $SKETCH
 arduino-cli monitor -p <port> -c baudrate=115200
 ```
 
