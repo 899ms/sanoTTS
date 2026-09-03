@@ -108,6 +108,12 @@ BENCH_WARMUP ?= 3
 
 .PHONY: bench-nano bench-r7 bench-nano-prof bench-glue bench-all
 
+# Derive a shorter benchmark row for boards that cannot hand out one
+# contiguous ~129 KB block. See test/fixtures/en_us_e12nano_short/README.md
+# for what its reference does and does not gate.
+nano_short_row: src/snt_nano.c src/snt_kernels_ref.c ports/host/snt_port_host.c test/nano_short_row.c $(NANO_HDR) $(NANO_STAMP)
+	$(CC) $(CFLAGS) -I$(NANO_MODEL) $(filter %.c,$^) -lm -o $@
+
 snt_nano_bench: src/snt_nano.c src/snt_kernels_ref.c ports/host/snt_port_host.c test/nano_bench_main.c $(NANO_HDR) $(NANO_STAMP)
 	$(CC) $(CFLAGS) -I$(NANO_MODEL) $(filter %.c,$^) -lm -o $@
 

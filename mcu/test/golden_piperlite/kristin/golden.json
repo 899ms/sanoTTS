@@ -1,0 +1,340 @@
+{
+ "checkpoint": "releases/kristin-20260707/web/decoder-student-1p0m-demetalB.pt",
+ "dims": {
+  "in_ch": 192,
+  "c0": 192,
+  "c1": 96,
+  "c2": 48,
+  "c3": 24,
+  "pf_channels": 8,
+  "pf_layers": 1,
+  "pf_kernel": 9,
+  "pf_scale": 0.1,
+  "hop": 256,
+  "frames": 256,
+  "weight_floats": 1000875
+ },
+ "shapes": {
+  "z": [
+   192,
+   256
+  ],
+  "audio": [
+   1,
+   65536
+  ],
+  "pre": [
+   192,
+   256
+  ],
+  "up0": [
+   96,
+   2048
+  ],
+  "stage0_mix": [
+   96,
+   2048
+  ],
+  "up1": [
+   48,
+   16384
+  ],
+  "stage1_mix": [
+   48,
+   16384
+  ],
+  "up2": [
+   24,
+   65536
+  ],
+  "stage2_mix": [
+   24,
+   65536
+  ],
+  "pre_tanh": [
+   1,
+   65536
+  ],
+  "audio_pre_filter": [
+   1,
+   65536
+  ]
+ },
+ "tensors": [
+  {
+   "name": "pre.weight",
+   "offset": 0,
+   "floats": 258048
+  },
+  {
+   "name": "pre.bias",
+   "offset": 258048,
+   "floats": 192
+  },
+  {
+   "name": "up0.weight",
+   "offset": 258240,
+   "floats": 294912
+  },
+  {
+   "name": "up0.bias",
+   "offset": 553152,
+   "floats": 96
+  },
+  {
+   "name": "res0.0.blocks.0.conv1.weight",
+   "offset": 553248,
+   "floats": 27648
+  },
+  {
+   "name": "res0.0.blocks.0.conv1.bias",
+   "offset": 580896,
+   "floats": 96
+  },
+  {
+   "name": "res0.0.blocks.0.conv2.weight",
+   "offset": 580992,
+   "floats": 27648
+  },
+  {
+   "name": "res0.0.blocks.0.conv2.bias",
+   "offset": 608640,
+   "floats": 96
+  },
+  {
+   "name": "res0.0.blocks.1.conv1.weight",
+   "offset": 608736,
+   "floats": 46080
+  },
+  {
+   "name": "res0.0.blocks.1.conv1.bias",
+   "offset": 654816,
+   "floats": 96
+  },
+  {
+   "name": "res0.0.blocks.1.conv2.weight",
+   "offset": 654912,
+   "floats": 46080
+  },
+  {
+   "name": "res0.0.blocks.1.conv2.bias",
+   "offset": 700992,
+   "floats": 96
+  },
+  {
+   "name": "res0.0.blocks.2.conv1.weight",
+   "offset": 701088,
+   "floats": 64512
+  },
+  {
+   "name": "res0.0.blocks.2.conv1.bias",
+   "offset": 765600,
+   "floats": 96
+  },
+  {
+   "name": "res0.0.blocks.2.conv2.weight",
+   "offset": 765696,
+   "floats": 64512
+  },
+  {
+   "name": "res0.0.blocks.2.conv2.bias",
+   "offset": 830208,
+   "floats": 96
+  },
+  {
+   "name": "up1.weight",
+   "offset": 830304,
+   "floats": 73728
+  },
+  {
+   "name": "up1.bias",
+   "offset": 904032,
+   "floats": 48
+  },
+  {
+   "name": "res1.0.blocks.0.conv1.weight",
+   "offset": 904080,
+   "floats": 6912
+  },
+  {
+   "name": "res1.0.blocks.0.conv1.bias",
+   "offset": 910992,
+   "floats": 48
+  },
+  {
+   "name": "res1.0.blocks.0.conv2.weight",
+   "offset": 911040,
+   "floats": 6912
+  },
+  {
+   "name": "res1.0.blocks.0.conv2.bias",
+   "offset": 917952,
+   "floats": 48
+  },
+  {
+   "name": "res1.0.blocks.1.conv1.weight",
+   "offset": 918000,
+   "floats": 11520
+  },
+  {
+   "name": "res1.0.blocks.1.conv1.bias",
+   "offset": 929520,
+   "floats": 48
+  },
+  {
+   "name": "res1.0.blocks.1.conv2.weight",
+   "offset": 929568,
+   "floats": 11520
+  },
+  {
+   "name": "res1.0.blocks.1.conv2.bias",
+   "offset": 941088,
+   "floats": 48
+  },
+  {
+   "name": "res1.0.blocks.2.conv1.weight",
+   "offset": 941136,
+   "floats": 16128
+  },
+  {
+   "name": "res1.0.blocks.2.conv1.bias",
+   "offset": 957264,
+   "floats": 48
+  },
+  {
+   "name": "res1.0.blocks.2.conv2.weight",
+   "offset": 957312,
+   "floats": 16128
+  },
+  {
+   "name": "res1.0.blocks.2.conv2.bias",
+   "offset": 973440,
+   "floats": 48
+  },
+  {
+   "name": "up2.weight",
+   "offset": 973488,
+   "floats": 9216
+  },
+  {
+   "name": "up2.bias",
+   "offset": 982704,
+   "floats": 24
+  },
+  {
+   "name": "res2.0.blocks.0.conv1.weight",
+   "offset": 982728,
+   "floats": 1728
+  },
+  {
+   "name": "res2.0.blocks.0.conv1.bias",
+   "offset": 984456,
+   "floats": 24
+  },
+  {
+   "name": "res2.0.blocks.0.conv2.weight",
+   "offset": 984480,
+   "floats": 1728
+  },
+  {
+   "name": "res2.0.blocks.0.conv2.bias",
+   "offset": 986208,
+   "floats": 24
+  },
+  {
+   "name": "res2.0.blocks.1.conv1.weight",
+   "offset": 986232,
+   "floats": 2880
+  },
+  {
+   "name": "res2.0.blocks.1.conv1.bias",
+   "offset": 989112,
+   "floats": 24
+  },
+  {
+   "name": "res2.0.blocks.1.conv2.weight",
+   "offset": 989136,
+   "floats": 2880
+  },
+  {
+   "name": "res2.0.blocks.1.conv2.bias",
+   "offset": 992016,
+   "floats": 24
+  },
+  {
+   "name": "res2.0.blocks.2.conv1.weight",
+   "offset": 992040,
+   "floats": 4032
+  },
+  {
+   "name": "res2.0.blocks.2.conv1.bias",
+   "offset": 996072,
+   "floats": 24
+  },
+  {
+   "name": "res2.0.blocks.2.conv2.weight",
+   "offset": 996096,
+   "floats": 4032
+  },
+  {
+   "name": "res2.0.blocks.2.conv2.bias",
+   "offset": 1000128,
+   "floats": 24
+  },
+  {
+   "name": "post.weight",
+   "offset": 1000152,
+   "floats": 168
+  },
+  {
+   "name": "post.bias",
+   "offset": 1000320,
+   "floats": 1
+  },
+  {
+   "name": "post_filter.in_conv.weight",
+   "offset": 1000321,
+   "floats": 72
+  },
+  {
+   "name": "post_filter.in_conv.bias",
+   "offset": 1000393,
+   "floats": 8
+  },
+  {
+   "name": "post_filter.units.0.scale",
+   "offset": 1000401,
+   "floats": 1
+  },
+  {
+   "name": "post_filter.units.0.conv1.weight",
+   "offset": 1000402,
+   "floats": 192
+  },
+  {
+   "name": "post_filter.units.0.conv1.bias",
+   "offset": 1000594,
+   "floats": 8
+  },
+  {
+   "name": "post_filter.units.0.conv2.weight",
+   "offset": 1000602,
+   "floats": 192
+  },
+  {
+   "name": "post_filter.units.0.conv2.bias",
+   "offset": 1000794,
+   "floats": 8
+  },
+  {
+   "name": "post_filter.out_conv.weight",
+   "offset": 1000802,
+   "floats": 72
+  },
+  {
+   "name": "post_filter.out_conv.bias",
+   "offset": 1000874,
+   "floats": 1
+  }
+ ]
+}

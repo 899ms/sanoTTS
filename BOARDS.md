@@ -1,7 +1,8 @@
 # Board results
 
-saanoTTS on real silicon. **One board is measured on the Arduino path** --
-an ESP32-S3, at **0.38 xRT, 2.6x faster than real time**, below. Everything else here is either a projection or an empty row
+saanoTTS on real silicon. **Two boards are measured on the Arduino path** --
+an ESP32-S3 at **0.41 xRT, 2.4x faster than real time**, and a classic ESP32
+at 2.17 xRT. Both below. Everything else here is either a projection or an empty row
 waiting for someone with the hardware.
 
 If you have one of these boards, `arduino/examples/BoardBenchmark` is a single
@@ -77,27 +78,24 @@ The 294k model is 2.33x faster, 1.83x smaller and correlates better. Host and
 device agree exactly on it (`arena_peak` 128,944 B on host, on the Arduino
 build and in the ESP-IDF port).
 
-### ESP32 classic (ESP32-D0WD-V3, 240 MHz, 4 MB) -- 2026-09-04
+### Both chips, short row (255 frames, 2.95 s) -- 2026-09-04
 
-**Does not run the shipped row.** It flashes and boots fine, and the sketch
-reports why:
+| Board | MCU | Kernels | RTF | vs real time | eff MMAC/s | corr |
+|---|---|---|---:|---:|---:|---:|
+| ESP32-S3 | Xtensa LX7 | **PIE SIMD** | **0.4107** | **2.4x faster** | 46.3 | 1.000000 |
+| ESP32 classic | Xtensa LX6 | scalar | 2.1720 | 0.46x | 8.7 | 1.000000 |
 
-```
-FATAL: could not allocate the 139264 byte minimum arena.
-  free heap:      250040
-  largest block:  110580
-```
+Both reproduce the host reference **exactly**, which is the point of this
+gate: an LX6 running scalar C and an LX7 running hand-written vector assembly
+produce bit-identical audio. `arena_peak` is 98,224 B on both, and on the
+host.
 
-250 KB free but the largest *contiguous* block is 110,580 B, and the arena
-must be one piece. Classic-ESP32 internal DRAM is split into regions that
-never coalesce, so total free heap badly overstates what it can hand out.
-Xtensa LX6 also has no PIE unit, so it would take the scalar path regardless.
+The classic ESP32 could not run the 415-frame row at all -- 250,040 B free but
+a largest contiguous block of 110,580 B against a 128,944 B requirement.
+Total free heap badly overstates what these parts hand out at once. The
+255-frame row needs 98,224 B and fits with ~12 KB spare.
 
-At 46.5 KB + 195.7 B/frame, 110,580 B supports about **321 frames (~3.7 s)**.
-The shipped row is 415 frames, so this chip needs a shorter fixture, not more
-memory. Same story for Nucleo-F411RE.
-
-### ESP-IDF ports with SIMD kernels
+### ESP-IDF ports with SIMD kernels### ESP-IDF ports with SIMD kernels
 
 Not comparable to the rows above -- these use the PIE assembly and esp-nn,
 which the portable Arduino library does not ship.

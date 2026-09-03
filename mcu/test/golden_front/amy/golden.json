@@ -1,0 +1,343 @@
+{
+ "duration_checkpoint": "artifacts/sub10m-search/root-a-piper-vits/en_US-amy-medium-retrain-20260712/a5-duration/duration-student.pt",
+ "acoustic_checkpoint": "artifacts/sub10m-search/root-a-piper-vits/en_US-amy-medium-retrain-20260712/e2-wide192-ac64-joint/latent-student.pt",
+ "id_source": {
+  "kind": "pack",
+  "pack": "artifacts/sub10m-search/root-a-piper-vits/en_US-amy-medium-retrain-20260712/eval128-piper-native",
+  "chunk_row": 0,
+  "text": "The assistant needs stable timing for an offline local assistant."
+ },
+ "dims": {
+  "d_vocab": 129,
+  "d_hidden": 64,
+  "d_depth": 3,
+  "d_kernel": 5,
+  "d_max_tokens": 265,
+  "d_max_duration": 80,
+  "a_vocab": 145,
+  "a_hidden": 64,
+  "a_token_depth": 3,
+  "a_depth": 4,
+  "a_kernel": 5,
+  "a_out_channels": 192,
+  "adapter_mode": 0,
+  "adapter_kernel": 0,
+  "adapter_rank": 0,
+  "weight_floats": 453963
+ },
+ "n_tokens": 143,
+ "frames": 377,
+ "frames_ls125": 474,
+ "tensors": [
+  {
+   "name": "embedding.weight",
+   "offset": 0,
+   "floats": 8256
+  },
+  {
+   "name": "input_proj.weight",
+   "offset": 8256,
+   "floats": 4288
+  },
+  {
+   "name": "input_proj.bias",
+   "offset": 12544,
+   "floats": 64
+  },
+  {
+   "name": "blocks.0.scale",
+   "offset": 12608,
+   "floats": 1
+  },
+  {
+   "name": "blocks.0.net.0.weight",
+   "offset": 12609,
+   "floats": 20480
+  },
+  {
+   "name": "blocks.0.net.0.bias",
+   "offset": 33089,
+   "floats": 64
+  },
+  {
+   "name": "blocks.0.net.2.weight",
+   "offset": 33153,
+   "floats": 20480
+  },
+  {
+   "name": "blocks.0.net.2.bias",
+   "offset": 53633,
+   "floats": 64
+  },
+  {
+   "name": "blocks.1.scale",
+   "offset": 53697,
+   "floats": 1
+  },
+  {
+   "name": "blocks.1.net.0.weight",
+   "offset": 53698,
+   "floats": 20480
+  },
+  {
+   "name": "blocks.1.net.0.bias",
+   "offset": 74178,
+   "floats": 64
+  },
+  {
+   "name": "blocks.1.net.2.weight",
+   "offset": 74242,
+   "floats": 20480
+  },
+  {
+   "name": "blocks.1.net.2.bias",
+   "offset": 94722,
+   "floats": 64
+  },
+  {
+   "name": "blocks.2.scale",
+   "offset": 94786,
+   "floats": 1
+  },
+  {
+   "name": "blocks.2.net.0.weight",
+   "offset": 94787,
+   "floats": 20480
+  },
+  {
+   "name": "blocks.2.net.0.bias",
+   "offset": 115267,
+   "floats": 64
+  },
+  {
+   "name": "blocks.2.net.2.weight",
+   "offset": 115331,
+   "floats": 20480
+  },
+  {
+   "name": "blocks.2.net.2.bias",
+   "offset": 135811,
+   "floats": 64
+  },
+  {
+   "name": "output.weight",
+   "offset": 135875,
+   "floats": 64
+  },
+  {
+   "name": "output.bias",
+   "offset": 135939,
+   "floats": 1
+  },
+  {
+   "name": "embedding.weight",
+   "offset": 135940,
+   "floats": 9280
+  },
+  {
+   "name": "token_input_proj.weight",
+   "offset": 145220,
+   "floats": 4224
+  },
+  {
+   "name": "token_input_proj.bias",
+   "offset": 149444,
+   "floats": 64
+  },
+  {
+   "name": "token_blocks.0.scale",
+   "offset": 149508,
+   "floats": 1
+  },
+  {
+   "name": "token_blocks.0.net.0.weight",
+   "offset": 149509,
+   "floats": 20480
+  },
+  {
+   "name": "token_blocks.0.net.0.bias",
+   "offset": 169989,
+   "floats": 64
+  },
+  {
+   "name": "token_blocks.0.net.2.weight",
+   "offset": 170053,
+   "floats": 20480
+  },
+  {
+   "name": "token_blocks.0.net.2.bias",
+   "offset": 190533,
+   "floats": 64
+  },
+  {
+   "name": "token_blocks.1.scale",
+   "offset": 190597,
+   "floats": 1
+  },
+  {
+   "name": "token_blocks.1.net.0.weight",
+   "offset": 190598,
+   "floats": 20480
+  },
+  {
+   "name": "token_blocks.1.net.0.bias",
+   "offset": 211078,
+   "floats": 64
+  },
+  {
+   "name": "token_blocks.1.net.2.weight",
+   "offset": 211142,
+   "floats": 20480
+  },
+  {
+   "name": "token_blocks.1.net.2.bias",
+   "offset": 231622,
+   "floats": 64
+  },
+  {
+   "name": "token_blocks.2.scale",
+   "offset": 231686,
+   "floats": 1
+  },
+  {
+   "name": "token_blocks.2.net.0.weight",
+   "offset": 231687,
+   "floats": 20480
+  },
+  {
+   "name": "token_blocks.2.net.0.bias",
+   "offset": 252167,
+   "floats": 64
+  },
+  {
+   "name": "token_blocks.2.net.2.weight",
+   "offset": 252231,
+   "floats": 20480
+  },
+  {
+   "name": "token_blocks.2.net.2.bias",
+   "offset": 272711,
+   "floats": 64
+  },
+  {
+   "name": "frame_input_proj.weight",
+   "offset": 272775,
+   "floats": 4288
+  },
+  {
+   "name": "frame_input_proj.bias",
+   "offset": 277063,
+   "floats": 64
+  },
+  {
+   "name": "frame_blocks.0.scale",
+   "offset": 277127,
+   "floats": 1
+  },
+  {
+   "name": "frame_blocks.0.net.0.weight",
+   "offset": 277128,
+   "floats": 20480
+  },
+  {
+   "name": "frame_blocks.0.net.0.bias",
+   "offset": 297608,
+   "floats": 64
+  },
+  {
+   "name": "frame_blocks.0.net.2.weight",
+   "offset": 297672,
+   "floats": 20480
+  },
+  {
+   "name": "frame_blocks.0.net.2.bias",
+   "offset": 318152,
+   "floats": 64
+  },
+  {
+   "name": "frame_blocks.1.scale",
+   "offset": 318216,
+   "floats": 1
+  },
+  {
+   "name": "frame_blocks.1.net.0.weight",
+   "offset": 318217,
+   "floats": 20480
+  },
+  {
+   "name": "frame_blocks.1.net.0.bias",
+   "offset": 338697,
+   "floats": 64
+  },
+  {
+   "name": "frame_blocks.1.net.2.weight",
+   "offset": 338761,
+   "floats": 20480
+  },
+  {
+   "name": "frame_blocks.1.net.2.bias",
+   "offset": 359241,
+   "floats": 64
+  },
+  {
+   "name": "frame_blocks.2.scale",
+   "offset": 359305,
+   "floats": 1
+  },
+  {
+   "name": "frame_blocks.2.net.0.weight",
+   "offset": 359306,
+   "floats": 20480
+  },
+  {
+   "name": "frame_blocks.2.net.0.bias",
+   "offset": 379786,
+   "floats": 64
+  },
+  {
+   "name": "frame_blocks.2.net.2.weight",
+   "offset": 379850,
+   "floats": 20480
+  },
+  {
+   "name": "frame_blocks.2.net.2.bias",
+   "offset": 400330,
+   "floats": 64
+  },
+  {
+   "name": "frame_blocks.3.scale",
+   "offset": 400394,
+   "floats": 1
+  },
+  {
+   "name": "frame_blocks.3.net.0.weight",
+   "offset": 400395,
+   "floats": 20480
+  },
+  {
+   "name": "frame_blocks.3.net.0.bias",
+   "offset": 420875,
+   "floats": 64
+  },
+  {
+   "name": "frame_blocks.3.net.2.weight",
+   "offset": 420939,
+   "floats": 20480
+  },
+  {
+   "name": "frame_blocks.3.net.2.bias",
+   "offset": 441419,
+   "floats": 64
+  },
+  {
+   "name": "output.weight",
+   "offset": 441483,
+   "floats": 12288
+  },
+  {
+   "name": "output.bias",
+   "offset": 453771,
+   "floats": 192
+  }
+ ]
+}

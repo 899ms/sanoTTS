@@ -45,10 +45,10 @@ CXXFLAGS="-O2 -std=c++11 -Wall -I$src -I$here -DFSD_FAST_MATH"
 # samples / corr 0.989148. nano row 0: 415 frames / 105,984 samples, and the
 # correlation is over the embedded 34,304-sample prefix.
 if grep -q "define SANOTTS_BENCH_NANO" "$sketch/sanotts_bench_data.h"; then
-  EXPECT_FRAMES=${EXPECT_FRAMES:-415}
-  EXPECT_SAMPLES=${EXPECT_SAMPLES:-105984}
+  EXPECT_FRAMES=${EXPECT_FRAMES:-255}
+  EXPECT_SAMPLES=${EXPECT_SAMPLES:-65024}
   EXPECT_CORR=${EXPECT_CORR:-0.98}
-  CAPS=${CAPS:-"0 327680 196608 147456 139264"}
+  CAPS=${CAPS:-"0 327680 196608 131072 106496 102400"}
 else
   EXPECT_FRAMES=${EXPECT_FRAMES:-134}
   EXPECT_SAMPLES=${EXPECT_SAMPLES:-34304}

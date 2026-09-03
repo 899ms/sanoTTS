@@ -1,0 +1,377 @@
+{
+ "duration_checkpoint": "artifacts/frozen-four-restore/saanotts-preserved-six-checkpoints-20260702/hindi-pratham-a5-a23-a103/checkpoints/duration.pt",
+ "acoustic_checkpoint": "artifacts/frozen-four-restore/saanotts-preserved-six-checkpoints-20260702/hindi-pratham-a5-a23-a103/checkpoints/acoustic.pt",
+ "id_source": {
+  "kind": "piper",
+  "model": "models/teachers/hi_IN-pratham-medium/hi_IN-pratham-medium.onnx",
+  "text": "\u0928\u092e\u0938\u094d\u0924\u0947, \u092f\u0939 \u090f\u0915 \u091b\u094b\u091f\u093e \u0939\u093f\u0902\u0926\u0940 \u0935\u093e\u0915\u094d\u092f \u0939\u0948\u0964 \u0906\u0935\u093e\u091c\u093c \u0938\u093e\u092b\u093c \u0939\u094b\u0928\u0940 \u091a\u093e\u0939\u093f\u090f\u0964"
+ },
+ "dims": {
+  "d_vocab": 146,
+  "d_hidden": 64,
+  "d_depth": 3,
+  "d_kernel": 5,
+  "d_max_tokens": 313,
+  "d_max_duration": 80,
+  "a_vocab": 146,
+  "a_hidden": 96,
+  "a_token_depth": 3,
+  "a_depth": 4,
+  "a_kernel": 5,
+  "a_out_channels": 192,
+  "adapter_mode": 4,
+  "adapter_kernel": 5,
+  "adapter_rank": 60,
+  "weight_floats": 859879
+ },
+ "n_tokens": 166,
+ "frames": 343,
+ "frames_ls125": 427,
+ "tensors": [
+  {
+   "name": "embedding.weight",
+   "offset": 0,
+   "floats": 9344
+  },
+  {
+   "name": "input_proj.weight",
+   "offset": 9344,
+   "floats": 4288
+  },
+  {
+   "name": "input_proj.bias",
+   "offset": 13632,
+   "floats": 64
+  },
+  {
+   "name": "blocks.0.scale",
+   "offset": 13696,
+   "floats": 1
+  },
+  {
+   "name": "blocks.0.net.0.weight",
+   "offset": 13697,
+   "floats": 20480
+  },
+  {
+   "name": "blocks.0.net.0.bias",
+   "offset": 34177,
+   "floats": 64
+  },
+  {
+   "name": "blocks.0.net.2.weight",
+   "offset": 34241,
+   "floats": 20480
+  },
+  {
+   "name": "blocks.0.net.2.bias",
+   "offset": 54721,
+   "floats": 64
+  },
+  {
+   "name": "blocks.1.scale",
+   "offset": 54785,
+   "floats": 1
+  },
+  {
+   "name": "blocks.1.net.0.weight",
+   "offset": 54786,
+   "floats": 20480
+  },
+  {
+   "name": "blocks.1.net.0.bias",
+   "offset": 75266,
+   "floats": 64
+  },
+  {
+   "name": "blocks.1.net.2.weight",
+   "offset": 75330,
+   "floats": 20480
+  },
+  {
+   "name": "blocks.1.net.2.bias",
+   "offset": 95810,
+   "floats": 64
+  },
+  {
+   "name": "blocks.2.scale",
+   "offset": 95874,
+   "floats": 1
+  },
+  {
+   "name": "blocks.2.net.0.weight",
+   "offset": 95875,
+   "floats": 20480
+  },
+  {
+   "name": "blocks.2.net.0.bias",
+   "offset": 116355,
+   "floats": 64
+  },
+  {
+   "name": "blocks.2.net.2.weight",
+   "offset": 116419,
+   "floats": 20480
+  },
+  {
+   "name": "blocks.2.net.2.bias",
+   "offset": 136899,
+   "floats": 64
+  },
+  {
+   "name": "output.weight",
+   "offset": 136963,
+   "floats": 64
+  },
+  {
+   "name": "output.bias",
+   "offset": 137027,
+   "floats": 1
+  },
+  {
+   "name": "base.embedding.weight",
+   "offset": 137028,
+   "floats": 14016
+  },
+  {
+   "name": "base.token_input_proj.weight",
+   "offset": 151044,
+   "floats": 9408
+  },
+  {
+   "name": "base.token_input_proj.bias",
+   "offset": 160452,
+   "floats": 96
+  },
+  {
+   "name": "base.token_blocks.0.scale",
+   "offset": 160548,
+   "floats": 1
+  },
+  {
+   "name": "base.token_blocks.0.net.0.weight",
+   "offset": 160549,
+   "floats": 46080
+  },
+  {
+   "name": "base.token_blocks.0.net.0.bias",
+   "offset": 206629,
+   "floats": 96
+  },
+  {
+   "name": "base.token_blocks.0.net.2.weight",
+   "offset": 206725,
+   "floats": 46080
+  },
+  {
+   "name": "base.token_blocks.0.net.2.bias",
+   "offset": 252805,
+   "floats": 96
+  },
+  {
+   "name": "base.token_blocks.1.scale",
+   "offset": 252901,
+   "floats": 1
+  },
+  {
+   "name": "base.token_blocks.1.net.0.weight",
+   "offset": 252902,
+   "floats": 46080
+  },
+  {
+   "name": "base.token_blocks.1.net.0.bias",
+   "offset": 298982,
+   "floats": 96
+  },
+  {
+   "name": "base.token_blocks.1.net.2.weight",
+   "offset": 299078,
+   "floats": 46080
+  },
+  {
+   "name": "base.token_blocks.1.net.2.bias",
+   "offset": 345158,
+   "floats": 96
+  },
+  {
+   "name": "base.token_blocks.2.scale",
+   "offset": 345254,
+   "floats": 1
+  },
+  {
+   "name": "base.token_blocks.2.net.0.weight",
+   "offset": 345255,
+   "floats": 46080
+  },
+  {
+   "name": "base.token_blocks.2.net.0.bias",
+   "offset": 391335,
+   "floats": 96
+  },
+  {
+   "name": "base.token_blocks.2.net.2.weight",
+   "offset": 391431,
+   "floats": 46080
+  },
+  {
+   "name": "base.token_blocks.2.net.2.bias",
+   "offset": 437511,
+   "floats": 96
+  },
+  {
+   "name": "base.frame_input_proj.weight",
+   "offset": 437607,
+   "floats": 9504
+  },
+  {
+   "name": "base.frame_input_proj.bias",
+   "offset": 447111,
+   "floats": 96
+  },
+  {
+   "name": "base.frame_blocks.0.scale",
+   "offset": 447207,
+   "floats": 1
+  },
+  {
+   "name": "base.frame_blocks.0.net.0.weight",
+   "offset": 447208,
+   "floats": 46080
+  },
+  {
+   "name": "base.frame_blocks.0.net.0.bias",
+   "offset": 493288,
+   "floats": 96
+  },
+  {
+   "name": "base.frame_blocks.0.net.2.weight",
+   "offset": 493384,
+   "floats": 46080
+  },
+  {
+   "name": "base.frame_blocks.0.net.2.bias",
+   "offset": 539464,
+   "floats": 96
+  },
+  {
+   "name": "base.frame_blocks.1.scale",
+   "offset": 539560,
+   "floats": 1
+  },
+  {
+   "name": "base.frame_blocks.1.net.0.weight",
+   "offset": 539561,
+   "floats": 46080
+  },
+  {
+   "name": "base.frame_blocks.1.net.0.bias",
+   "offset": 585641,
+   "floats": 96
+  },
+  {
+   "name": "base.frame_blocks.1.net.2.weight",
+   "offset": 585737,
+   "floats": 46080
+  },
+  {
+   "name": "base.frame_blocks.1.net.2.bias",
+   "offset": 631817,
+   "floats": 96
+  },
+  {
+   "name": "base.frame_blocks.2.scale",
+   "offset": 631913,
+   "floats": 1
+  },
+  {
+   "name": "base.frame_blocks.2.net.0.weight",
+   "offset": 631914,
+   "floats": 46080
+  },
+  {
+   "name": "base.frame_blocks.2.net.0.bias",
+   "offset": 677994,
+   "floats": 96
+  },
+  {
+   "name": "base.frame_blocks.2.net.2.weight",
+   "offset": 678090,
+   "floats": 46080
+  },
+  {
+   "name": "base.frame_blocks.2.net.2.bias",
+   "offset": 724170,
+   "floats": 96
+  },
+  {
+   "name": "base.frame_blocks.3.scale",
+   "offset": 724266,
+   "floats": 1
+  },
+  {
+   "name": "base.frame_blocks.3.net.0.weight",
+   "offset": 724267,
+   "floats": 46080
+  },
+  {
+   "name": "base.frame_blocks.3.net.0.bias",
+   "offset": 770347,
+   "floats": 96
+  },
+  {
+   "name": "base.frame_blocks.3.net.2.weight",
+   "offset": 770443,
+   "floats": 46080
+  },
+  {
+   "name": "base.frame_blocks.3.net.2.bias",
+   "offset": 816523,
+   "floats": 96
+  },
+  {
+   "name": "base.output.weight",
+   "offset": 816619,
+   "floats": 18432
+  },
+  {
+   "name": "base.output.bias",
+   "offset": 835051,
+   "floats": 192
+  },
+  {
+   "name": "adapter.depthwise.weight",
+   "offset": 835243,
+   "floats": 960
+  },
+  {
+   "name": "adapter.lowrank_down.weight",
+   "offset": 836203,
+   "floats": 11520
+  },
+  {
+   "name": "adapter.lowrank_down.bias",
+   "offset": 847723,
+   "floats": 60
+  },
+  {
+   "name": "adapter.lowrank_up.weight",
+   "offset": 847783,
+   "floats": 11520
+  },
+  {
+   "name": "adapter.lowrank_up.bias",
+   "offset": 859303,
+   "floats": 192
+  },
+  {
+   "name": "adapter.scale",
+   "offset": 859495,
+   "floats": 192
+  },
+  {
+   "name": "adapter.bias",
+   "offset": 859687,
+   "floats": 192
+  }
+ ]
+}

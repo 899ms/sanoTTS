@@ -1,0 +1,295 @@
+{
+ "checkpoint": "artifacts/sub10m-search/root-a-piper-vits/vi_VN-vais1000-medium-retrain-20260712/a93-joint/decoder-student.pt",
+ "dims": {
+  "in_ch": 192,
+  "c0": 160,
+  "c1": 80,
+  "c2": 40,
+  "c3": 20,
+  "pf_channels": 0,
+  "pf_layers": 0,
+  "pf_kernel": 9,
+  "pf_scale": 0.25,
+  "hop": 256,
+  "frames": 256,
+  "weight_floats": 730721
+ },
+ "shapes": {
+  "z": [
+   192,
+   256
+  ],
+  "audio": [
+   1,
+   65536
+  ],
+  "pre": [
+   160,
+   256
+  ],
+  "up0": [
+   80,
+   2048
+  ],
+  "stage0_mix": [
+   80,
+   2048
+  ],
+  "up1": [
+   40,
+   16384
+  ],
+  "stage1_mix": [
+   40,
+   16384
+  ],
+  "up2": [
+   20,
+   65536
+  ],
+  "stage2_mix": [
+   20,
+   65536
+  ],
+  "pre_tanh": [
+   1,
+   65536
+  ],
+  "audio_pre_filter": [
+   1,
+   65536
+  ]
+ },
+ "tensors": [
+  {
+   "name": "pre.weight",
+   "offset": 0,
+   "floats": 215040
+  },
+  {
+   "name": "pre.bias",
+   "offset": 215040,
+   "floats": 160
+  },
+  {
+   "name": "up0.weight",
+   "offset": 215200,
+   "floats": 204800
+  },
+  {
+   "name": "up0.bias",
+   "offset": 420000,
+   "floats": 80
+  },
+  {
+   "name": "res0.0.blocks.0.conv1.weight",
+   "offset": 420080,
+   "floats": 19200
+  },
+  {
+   "name": "res0.0.blocks.0.conv1.bias",
+   "offset": 439280,
+   "floats": 80
+  },
+  {
+   "name": "res0.0.blocks.0.conv2.weight",
+   "offset": 439360,
+   "floats": 19200
+  },
+  {
+   "name": "res0.0.blocks.0.conv2.bias",
+   "offset": 458560,
+   "floats": 80
+  },
+  {
+   "name": "res0.0.blocks.1.conv1.weight",
+   "offset": 458640,
+   "floats": 32000
+  },
+  {
+   "name": "res0.0.blocks.1.conv1.bias",
+   "offset": 490640,
+   "floats": 80
+  },
+  {
+   "name": "res0.0.blocks.1.conv2.weight",
+   "offset": 490720,
+   "floats": 32000
+  },
+  {
+   "name": "res0.0.blocks.1.conv2.bias",
+   "offset": 522720,
+   "floats": 80
+  },
+  {
+   "name": "res0.0.blocks.2.conv1.weight",
+   "offset": 522800,
+   "floats": 44800
+  },
+  {
+   "name": "res0.0.blocks.2.conv1.bias",
+   "offset": 567600,
+   "floats": 80
+  },
+  {
+   "name": "res0.0.blocks.2.conv2.weight",
+   "offset": 567680,
+   "floats": 44800
+  },
+  {
+   "name": "res0.0.blocks.2.conv2.bias",
+   "offset": 612480,
+   "floats": 80
+  },
+  {
+   "name": "up1.weight",
+   "offset": 612560,
+   "floats": 51200
+  },
+  {
+   "name": "up1.bias",
+   "offset": 663760,
+   "floats": 40
+  },
+  {
+   "name": "res1.0.blocks.0.conv1.weight",
+   "offset": 663800,
+   "floats": 4800
+  },
+  {
+   "name": "res1.0.blocks.0.conv1.bias",
+   "offset": 668600,
+   "floats": 40
+  },
+  {
+   "name": "res1.0.blocks.0.conv2.weight",
+   "offset": 668640,
+   "floats": 4800
+  },
+  {
+   "name": "res1.0.blocks.0.conv2.bias",
+   "offset": 673440,
+   "floats": 40
+  },
+  {
+   "name": "res1.0.blocks.1.conv1.weight",
+   "offset": 673480,
+   "floats": 8000
+  },
+  {
+   "name": "res1.0.blocks.1.conv1.bias",
+   "offset": 681480,
+   "floats": 40
+  },
+  {
+   "name": "res1.0.blocks.1.conv2.weight",
+   "offset": 681520,
+   "floats": 8000
+  },
+  {
+   "name": "res1.0.blocks.1.conv2.bias",
+   "offset": 689520,
+   "floats": 40
+  },
+  {
+   "name": "res1.0.blocks.2.conv1.weight",
+   "offset": 689560,
+   "floats": 11200
+  },
+  {
+   "name": "res1.0.blocks.2.conv1.bias",
+   "offset": 700760,
+   "floats": 40
+  },
+  {
+   "name": "res1.0.blocks.2.conv2.weight",
+   "offset": 700800,
+   "floats": 11200
+  },
+  {
+   "name": "res1.0.blocks.2.conv2.bias",
+   "offset": 712000,
+   "floats": 40
+  },
+  {
+   "name": "up2.weight",
+   "offset": 712040,
+   "floats": 6400
+  },
+  {
+   "name": "up2.bias",
+   "offset": 718440,
+   "floats": 20
+  },
+  {
+   "name": "res2.0.blocks.0.conv1.weight",
+   "offset": 718460,
+   "floats": 1200
+  },
+  {
+   "name": "res2.0.blocks.0.conv1.bias",
+   "offset": 719660,
+   "floats": 20
+  },
+  {
+   "name": "res2.0.blocks.0.conv2.weight",
+   "offset": 719680,
+   "floats": 1200
+  },
+  {
+   "name": "res2.0.blocks.0.conv2.bias",
+   "offset": 720880,
+   "floats": 20
+  },
+  {
+   "name": "res2.0.blocks.1.conv1.weight",
+   "offset": 720900,
+   "floats": 2000
+  },
+  {
+   "name": "res2.0.blocks.1.conv1.bias",
+   "offset": 722900,
+   "floats": 20
+  },
+  {
+   "name": "res2.0.blocks.1.conv2.weight",
+   "offset": 722920,
+   "floats": 2000
+  },
+  {
+   "name": "res2.0.blocks.1.conv2.bias",
+   "offset": 724920,
+   "floats": 20
+  },
+  {
+   "name": "res2.0.blocks.2.conv1.weight",
+   "offset": 724940,
+   "floats": 2800
+  },
+  {
+   "name": "res2.0.blocks.2.conv1.bias",
+   "offset": 727740,
+   "floats": 20
+  },
+  {
+   "name": "res2.0.blocks.2.conv2.weight",
+   "offset": 727760,
+   "floats": 2800
+  },
+  {
+   "name": "res2.0.blocks.2.conv2.bias",
+   "offset": 730560,
+   "floats": 20
+  },
+  {
+   "name": "post.weight",
+   "offset": 730580,
+   "floats": 140
+  },
+  {
+   "name": "post.bias",
+   "offset": 730720,
+   "floats": 1
+  }
+ ]
+}

@@ -124,17 +124,14 @@ static const long CPU_CLOCK_HZ = F_CPU;
  * request carries 16 spare bytes. */
 static const size_t ARENA_LADDER[] = {
   320u * 1024u, 256u * 1024u, 192u * 1024u, 160u * 1024u,
-  144u * 1024u, 136u * 1024u, 128u * 1024u, 112u * 1024u,
-   96u * 1024u,  88u * 1024u,
+  144u * 1024u, 128u * 1024u, 112u * 1024u, 104u * 1024u,
+   96u * 1024u,  88u * 1024u,  80u * 1024u,  72u * 1024u,
 };
-#if SANOTTS_BENCH_NANO
-/* Measured on the host for this row (415 frames): peak 128,944 B. The nano
- * arena is 46.5 KB fixed + ~196 B/frame, so a longer row costs more; this
- * floor is for the row actually embedded above. */
-static const size_t ARENA_FLOOR = 136u * 1024u;
-#else
-static const size_t ARENA_FLOOR = 88u * 1024u;
-#endif
+/* The floor belongs to the embedded row, not to the sketch: the arena is a
+ * fixed block plus a per-frame term, so a shorter utterance needs less. The
+ * generator computes it and writes it into the header, which is why this is
+ * not a constant you have to remember to change. */
+static const size_t ARENA_FLOOR = SANOTTS_BENCH_ARENA_MIN;
 
 /* Build with -DSANOTTS_BENCH_MAX_ARENA=<bytes> to skip the larger rungs.
  * Useful if malloc on your core succeeds but leaves the rest of the sketch
@@ -143,6 +140,86 @@ static const size_t ARENA_FLOOR = 88u * 1024u;
 #ifndef SANOTTS_BENCH_MAX_ARENA
 #define SANOTTS_BENCH_MAX_ARENA ((size_t)-1)
 #endif
+
+/* ---- WAV-over-serial -------------------------------------------------
+ * A benchmark that only prints numbers leaves you with no way to hear that
+ * the thing works. Press 'w' and the sketch synthesizes again, streaming the
+ * audio out as a base64 RIFF/WAV that extras/wav_from_serial.py turns into a
+ * file you can play. No DAC, no I2S, no SD card, no wiring -- the same zero-
+ * peripheral rule as the rest of the sketch.
+ *
+ * Base64 because the Arduino Serial Monitor is a text channel and raw bytes
+ * get mangled by it. Encoded straight out of the PCM callback three bytes at
+ * a time, so the whole waveform is never held in RAM -- 65,024 samples as
+ * int16 would be another 127 KB the arena needs more than we do. */
+static const char B64[] =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+static uint8_t g_b64_buf[3];
+static int g_b64_n = 0;
+static int g_b64_col = 0;
+
+static void b64_emit(uint8_t b) {
+  g_b64_buf[g_b64_n++] = b;
+  if (g_b64_n < 3) return;
+  const uint32_t v = ((uint32_t)g_b64_buf[0] << 16) |
+                     ((uint32_t)g_b64_buf[1] << 8) | g_b64_buf[2];
+  char q[4] = { B64[(v >> 18) & 63], B64[(v >> 12) & 63],
+                B64[(v >> 6) & 63], B64[v & 63] };
+  Serial.write((const uint8_t *)q, 4);
+  g_b64_n = 0;
+  if ((g_b64_col += 4) >= 76) { Serial.println(); g_b64_col = 0; }
+}
+
+static void b64_flush(void) {
+  if (g_b64_n) {
+    const int pad = 3 - g_b64_n;
+    while (g_b64_n < 3) g_b64_buf[g_b64_n++] = 0;
+    const uint32_t v = ((uint32_t)g_b64_buf[0] << 16) |
+                       ((uint32_t)g_b64_buf[1] << 8) | g_b64_buf[2];
+    char q[4] = { B64[(v >> 18) & 63], B64[(v >> 12) & 63],
+                  B64[(v >> 6) & 63], B64[v & 63] };
+    if (pad >= 1) q[3] = '=';
+    if (pad >= 2) q[2] = '=';
+    Serial.write((const uint8_t *)q, 4);
+  }
+  g_b64_n = 0; g_b64_col = 0;
+  Serial.println();
+}
+
+static void b64_u32(uint32_t v) {
+  b64_emit((uint8_t)(v & 0xFF));        b64_emit((uint8_t)((v >> 8) & 0xFF));
+  b64_emit((uint8_t)((v >> 16) & 0xFF)); b64_emit((uint8_t)((v >> 24) & 0xFF));
+}
+static void b64_u16(uint16_t v) {
+  b64_emit((uint8_t)(v & 0xFF)); b64_emit((uint8_t)((v >> 8) & 0xFF));
+}
+static void b64_tag(const char *t) {
+  for (int i = 0; i < 4; i++) b64_emit((uint8_t)t[i]);
+}
+
+/* Canonical 44-byte RIFF header, mono int16. The sample count is known ahead
+ * of synthesis (the durations are fixed), so the sizes are exact and the file
+ * needs no patching afterwards. */
+static void wav_header(uint32_t n_samples, uint32_t rate) {
+  const uint32_t data_bytes = n_samples * 2u;
+  b64_tag("RIFF"); b64_u32(36u + data_bytes); b64_tag("WAVE");
+  b64_tag("fmt "); b64_u32(16); b64_u16(1); b64_u16(1);
+  b64_u32(rate); b64_u32(rate * 2u); b64_u16(2); b64_u16(16);
+  b64_tag("data"); b64_u32(data_bytes);
+}
+
+static int wav_cb(const float *pcm, int n, void *user) {
+  (void)user;
+  for (int i = 0; i < n; i++) {
+    float v = pcm[i];
+    if (v > 1.0f) v = 1.0f;
+    if (v < -1.0f) v = -1.0f;
+    const int32_t q = (int32_t)(v * 32767.0f);
+    b64_emit((uint8_t)((uint16_t)q & 0xFF));
+    b64_emit((uint8_t)(((uint16_t)q >> 8) & 0xFF));
+  }
+  return 0;
+}
 
 /* Streaming correlation against the golden reference. Accumulating in the
  * callback means we never hold the whole waveform: the utterance is 34,304
@@ -178,6 +255,13 @@ static void run_benchmark() {
     if (ARENA_LADDER[i] < ARENA_FLOOR) break;
     arena = (uint8_t *)malloc(ARENA_LADDER[i] + 16);
     if (arena) { arena_size = ARENA_LADDER[i] + 16; break; }
+  }
+  /* The rungs are round numbers and the floor is not, so try the floor
+   * itself last. On a tight board that is the difference between a number
+   * and a FATAL. */
+  if (!arena && ARENA_FLOOR <= (size_t)SANOTTS_BENCH_MAX_ARENA) {
+    arena = (uint8_t *)malloc(ARENA_FLOOR + 16);
+    if (arena) arena_size = ARENA_FLOOR + 16;
   }
   if (!arena) {
     Serial.print(F("FATAL: could not allocate the "));
@@ -303,7 +387,9 @@ static void run_benchmark() {
     Serial.println(F("RTF > 1.0: functional but offline -- slower than playback."));
   }
   Serial.println();
-  Serial.println(F("Press Enter in the serial monitor to run again."));
+  Serial.println(F("Press Enter to run again, or 'w' to hear it:"));
+  Serial.println(F("  'w' streams the audio out as a base64 WAV, which"));
+  Serial.println(F("  extras/wav_from_serial.py saves as a playable file."));
   free(arena);
 }
 
@@ -320,9 +406,60 @@ void setup() {
 /* The report is easy to miss if the monitor opens after boot -- USB-CDC ports
  * and ST-Link UARTs both drop output nobody was listening to. Any keypress
  * re-runs the whole thing, so "I see nothing" has a one-key fix. */
+static void emit_wav(void) {
+  uint8_t *arena = NULL;
+  size_t arena_size = 0;
+  for (size_t i = 0; i < sizeof ARENA_LADDER / sizeof ARENA_LADDER[0]; i++) {
+    if (ARENA_LADDER[i] > (size_t)SANOTTS_BENCH_MAX_ARENA) continue;
+    if (ARENA_LADDER[i] < ARENA_FLOOR) break;
+    arena = (uint8_t *)malloc(ARENA_LADDER[i] + 16);
+    if (arena) { arena_size = ARENA_LADDER[i] + 16; break; }
+  }
+  if (!arena && ARENA_FLOOR <= (size_t)SANOTTS_BENCH_MAX_ARENA) {
+    arena = (uint8_t *)malloc(ARENA_FLOOR + 16);
+    if (arena) arena_size = ARENA_FLOOR + 16;
+  }
+  if (!arena) { Serial.println(F("cannot allocate arena for WAV")); return; }
+
+#if SANOTTS_BENCH_NANO
+  snt_nano_config cfg; snt_nano_stats st;
+#else
+  snt_config cfg; snt_stats st;
+#endif
+  memset(&cfg, 0, sizeof cfg);
+  memset(&st, 0, sizeof st);
+  cfg.front_blob = SANOTTS_BENCH_FRONT_Q8;
+  cfg.dec_blob   = SANOTTS_BENCH_MODEL_Q8;
+  cfg.arena      = arena;
+  cfg.arena_size = arena_size;
+  cfg.dur_override = SANOTTS_BENCH_DURS;
+#if SANOTTS_BENCH_NANO
+  cfg.noise_seed = SANOTTS_BENCH_SEED;
+#endif
+
+  Serial.println();
+  Serial.println(F("---- WAV BEGIN (base64) ----"));
+  g_b64_n = 0; g_b64_col = 0;
+  wav_header((uint32_t)SANOTTS_BENCH_N_SAMPLES, (uint32_t)SANOTTS_BENCH_SAMPLE_RATE);
+#if SANOTTS_BENCH_NANO
+  const int rc = snt_nano_synthesize(&cfg, SANOTTS_BENCH_IDS, SANOTTS_BENCH_N_IDS,
+                                     wav_cb, NULL, &st);
+#else
+  const int rc = snt_synthesize(&cfg, SANOTTS_BENCH_IDS, SANOTTS_BENCH_N_IDS,
+                                wav_cb, NULL, &st);
+#endif
+  b64_flush();
+  Serial.println(F("---- WAV END ----"));
+  free(arena);
+  if (rc != 0) { Serial.print(F("synthesis failed, rc=")); Serial.println(rc); return; }
+  Serial.println(F("Save it with:  python3 extras/wav_from_serial.py <port> out.wav"));
+}
+
 void loop() {
   if (Serial.available()) {
+    const int c = Serial.read();
     while (Serial.available()) Serial.read();
-    run_benchmark();
+    if (c == 'w' || c == 'W') emit_wav();
+    else run_benchmark();
   }
 }

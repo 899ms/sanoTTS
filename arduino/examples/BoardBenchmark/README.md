@@ -3,9 +3,16 @@
 Flash one sketch, get one block of numbers, paste it into an issue. No DAC,
 no SD card, no filesystem — the only peripheral is Serial.
 
-Needs ~820 KB flash and 88 KB free RAM. **22 boards are compile-verified**
-(arduino-cli 1.5.2); none has been measured yet — that is what you are here
-for.
+Runs the **294,642-parameter** voice. Needs ~500 KB flash and **~100 KB of
+free RAM in one contiguous block**. 22 boards are compile-verified
+(arduino-cli 1.5.2); two are measured on hardware:
+
+| Board | RTF | |
+|---|---:|---|
+| ESP32-S3 | **0.41** | 2.4× faster than real time (SIMD, automatic) |
+| ESP32 classic | 2.17 | scalar; LX6 has no vector unit |
+
+Yours is probably not on that list yet — that is what you are here for.
 
 ## 1. Install the library (all boards)
 
@@ -90,7 +97,7 @@ Flash, not speed, is the wall. These fail at link with a clear message:
 Anything with 256–512 KB of flash is out. There is no build flag that shrinks
 the weights.
 
-## 3. Run it
+## 3. Run it, and hear it
 
 1. **Upload.**
 2. **Tools → Serial Monitor**, set **115200 baud**.
@@ -99,6 +106,23 @@ the weights.
 
 Takes a few seconds on fast boards, up to a minute on slow ones.
 
+### Hearing the audio
+
+The benchmark checks its output and throws it away. To actually listen to it,
+press **`w`** in the serial monitor: the board streams the utterance out as a
+base64 WAV over the same USB cable. Save it with:
+
+```bash
+pip install pyserial
+python3 extras/wav_from_serial.py <port> out.wav
+```
+
+That script sends the `w` for you and writes a playable file. No DAC, no I2S,
+no SD card, no wiring.
+
+Verified end to end on an ESP32-S3: the captured WAV correlates **1.000000**
+with the host reference across all 65,024 samples.
+
 ## 4. What to share
 
 Copy the whole block between `---- REPORT ----` and `---- END REPORT ----`:
@@ -106,18 +130,20 @@ Copy the whole block between `---- REPORT ----` and `---- END REPORT ----`:
 ```
 ---- REPORT (paste this whole block) ----
 board:        Teensy 4.1
+model:        en_us_e12nano
 cpu_hz:       600000000
-arena_bytes:  327696
+arena_bytes:  106512
 rc:           0
-frames:       134
-samples:      34304
+frames:       255
+samples:      65024
 compared:     34304
-audio_s:      1.5557
+arena_peak:   98224
+audio_s:      2.9489
 elapsed_s:    ...
 RTF:          ...
 eff_MMAC_s:   ...
-golden_corr:  0.98...
-rms_ratio:    0.93...
+golden_corr:  1.00...
+rms_ratio:    0.99...
 verdict:      PASS
 ---- END REPORT ----
 ```

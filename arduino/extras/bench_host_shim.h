@@ -32,8 +32,6 @@ inline uint32_t micros() { return (uint32_t)shim_now_us(); }
 class ShimSerial {
 public:
     void begin(long) {}
-    int available() { return 0; }
-    int read() { return -1; }
     explicit operator bool() const { return true; }
     void println() { std::printf("\n"); }
     void print(const char *s) { std::printf("%s", s); }
@@ -46,6 +44,9 @@ public:
     void println(unsigned long v) { std::printf("%lu\n", v); }
     void print(double v, int digits) { std::printf("%.*f", digits, v); }
     void println(double v, int digits) { std::printf("%.*f\n", digits, v); }
+    size_t write(const uint8_t *b, size_t n) { return std::fwrite(b, 1, n, stdout); }
+    int available() { return 0; }
+    int read() { return -1; }
 };
 static ShimSerial Serial;
 
