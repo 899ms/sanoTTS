@@ -52,9 +52,17 @@ import sanotts
 result = sanotts.synthesize("Hello world", voice="amy")   # numpy audio @ 22.05 kHz
 ```
 
-Voices: `amy`, `amy-1p1m`, `amy-1p8m`, `kristin`, `hfc`, `vi`, `id` — fetched
-from the [voices-v1 release](https://github.com/Ampixa/sanoTTS/releases/tag/voices-v1)
-into `~/.cache/sanotts/`. Pure numpy inference, no torch, no onnxruntime.
+Voices, largest to smallest: `heart` (2.27M), `hfc` and `amy-1p8m` (1.8M),
+`amy`, `kristin`, `vi` and `id` (1.46M), `amy-1p1m` (1.1M), and `heart-nano`
+(294k, 337 KB of weights).
+
+They are fetched from
+[huggingface.co/ampixa/sanoTTS](https://huggingface.co/ampixa/sanoTTS) into
+`~/.cache/sanotts/`, and fall back to the GitHub
+[voices-v1](https://github.com/Ampixa/sanoTTS/releases/tag/voices-v1) and
+[voices-v2](https://github.com/Ampixa/sanoTTS/releases/tag/voices-v2) releases
+if Hugging Face cannot be reached. Set `SANOTTS_VOICE_SOURCE=hf` or `=github`
+to pin one host. Pure numpy inference, no torch, no onnxruntime.
 
 ### Arduino / PlatformIO
 
@@ -71,12 +79,14 @@ memory guidance, and flashing the model blobs
 
 ### Hugging Face
 
-The voice packages — including audio samples — are mirrored at
-[huggingface.co/ampixa/sanoTTS](https://huggingface.co/ampixa/sanoTTS).
+Every voice package, plus audio samples, lives at
+[huggingface.co/ampixa/sanoTTS](https://huggingface.co/ampixa/sanoTTS). That is
+where `pip install sanotts` downloads from by default; the GitHub releases are
+the fallback.
 
 ### Browser
 
-Nothing to install: [ampixa.github.io/sanoTTS](https://ampixa.github.io/sanoTTS/).
+Nothing to install: [tts.ampixa.com/sanoTTS](https://tts.ampixa.com/sanoTTS).
 
 ### Deploy on your own site
 
@@ -154,8 +164,8 @@ public figure.
 | System | Params | SCOREQ | UTMOS | DNS-SIG |
 | --- | ---: | :---: | :---: | :---: |
 | **sanoTTS (amy)** | **1.46 M** | **4.13** | **4.10** | 3.61 |
-| sanoTTS (heart) | 2.27 M | 3.51 | 3.42 | 3.50 |
-| sanoTTS (heart-nano) | 0.29 M | 2.30 | 2.45 | 3.35 |
+| sanoTTS (heart) | 2.27 M | 3.48 | 3.38 | 3.51 |
+| sanoTTS (heart-nano) | 0.29 M | 2.29 | 2.45 | 3.35 |
 | TinyTTS | 1.62 M | 3.94 | 3.65 | **3.62** |
 | Inflect Nano | 4.63 M | 3.81 | 3.65 | 3.58 |
 | Kitten TTS nano | 15 M | 3.02 | 3.58 | 3.43 |
@@ -185,8 +195,8 @@ SCOREQ from 3.70 to 4.16.
 | | kristin | 1.40 M | 4.09 |
 | | hfc | 1.83 M | 3.94 |
 | | amy-small | 1.08 M | 3.70 |
-| | heart (24 kHz) | 2.27 M | 3.51 |
-| | heart-nano (int8, 24 kHz) | 294 k | 2.30 |
+| | heart (24 kHz) | 2.27 M | 3.48 |
+| | heart-nano (int8, 24 kHz) | 294 k | 2.29 |
 | | robot (on-device, int8) | 567 k | — |
 | Nepali नेपाली | Nepali | 1.47 M | — |
 | Hindi हिन्दी | Hindi | 1.50 M | — |
@@ -263,8 +273,23 @@ ports), `web/` (browser demo), `configs/` + `data/textsets/` (contracts).
 
 ## License
 
-GPLv3 — see [`LICENSE`](LICENSE). The pipeline builds on GPLv3 components
-(notably [espeak-ng](https://github.com/espeak-ng/espeak-ng) for G2P), so the
-project as a whole is GPLv3.
+**The inference runtime is MIT. The project as a whole is GPLv3.**
+
+| | Licence |
+|---|---|
+| Runtime + language bindings (`mcu/src/snt_*.c`, `mcu/include/`, `mobile/`) | **MIT** — see [`LICENSE.MIT`](LICENSE.MIT) |
+| Everything else, including the espeak-ng G2P ports and the training tooling | **GPL-3.0-or-later** — see [`LICENSE`](LICENSE) |
+
+The copyleft comes from [espeak-ng](https://github.com/espeak-ng/espeak-ng)
+alone, which is used for grapheme-to-phoneme. An earlier version of this note
+said piper was GPLv3 too; it is not — [piper](https://github.com/rhasspy/piper)
+and piper-phonemize are MIT.
+
+The runtime files were audited against that boundary: none of them reference
+espeak, and the espeak-ng code lives entirely in the G2P and port layers, which
+stay GPLv3. `LICENSE.MIT` lists every covered file and shows the reasoning,
+including the upstream licences it was checked against. So you can embed the
+runtime in a permissively-licensed project; you cannot embed the espeak-ng G2P
+without taking GPLv3 with it.
 
 Copyright (C) 2026 Ampixa.
