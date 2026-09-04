@@ -211,9 +211,9 @@
         <td class="listen-cell"><audio controls preload="none" src="samples-release/english-amy-small-1.mp3" title="Welcome! This entire voice runs in under four megabytes, with no cloud at all."></audio></td>
       </tr>
       <tr>
-        <td class="voices-cell"><div class="vrow"><span class="vname">heart</span><span class="vparams">2.27M params</span> <span class="pill">SCOREQ 3.51</span> <span class="pill ghost">24 kHz</span>
+        <td class="voices-cell"><div class="vrow"><span class="vname">heart</span><span class="vparams">2.27M params</span> <span class="pill">SCOREQ 3.48</span> <span class="pill ghost">24 kHz</span>
           <span class="vnote">a different recipe from the voices above: a mel-100 acoustic model feeding a noise-shaping decoder, at 24&nbsp;kHz instead of 22.05. Scored on the same 24 sentences as the rest of this table. It synthesizes your text live below, running the exact float model (correlation 1.000000 against the training-side output on our golden set).</span></div></td>
-        <td class="listen-cell"><audio controls preload="none" src="samples-release/english-heart-1.mp3" title="Welcome! This entire voice runs in under four megabytes, with no cloud at all."></audio></td>
+        <td class="listen-cell"><audio controls preload="none" src="samples-release/english-heart-1.mp3" title="Welcome! This entire voice runs right here in your browser, with no cloud at all."></audio></td>
       </tr>
       <tr>
         <td class="voices-cell"><div class="vrow"><span class="vname">trellis</span><span class="vparams">995k params</span> <span class="pill ghost">research preview</span>
@@ -221,9 +221,9 @@
         <td class="listen-cell"><audio controls preload="none" src="samples-release/english-trellis-1.mp3" title="Welcome! This entire voice runs in under four megabytes, with no cloud at all."></audio></td>
       </tr>
       <tr>
-        <td class="voices-cell"><div class="vrow"><span class="vname">heart-nano</span><span class="vparams">294k params</span> <span class="pill">SCOREQ 2.30</span> <span class="pill mute">int8 · 337 KB</span>
+        <td class="voices-cell"><div class="vrow"><span class="vname">heart-nano</span><span class="vparams">294k params</span> <span class="pill">SCOREQ 2.29</span> <span class="pill mute">int8 · 337 KB</span>
           <span class="vnote">the smallest complete neural text-to-speech stack we have built: duration, acoustic and decoder in 294,279 parameters, int8, 24&nbsp;kHz. Clearly intelligible, clearly not as clean as the voices above &mdash; you can hear what a tenth of a megabyte buys. What plays below is the same int8 arithmetic a microcontroller would run.</span></div></td>
-        <td class="listen-cell"><audio controls preload="none" src="samples-release/english-heartnano-1.mp3" title="Welcome! This entire voice runs in under four megabytes, with no cloud at all."></audio></td>
+        <td class="listen-cell"><audio controls preload="none" src="samples-release/english-heartnano-1.mp3" title="Welcome! This entire voice runs in under four hundred kilobytes, with no cloud at all."></audio></td>
       </tr>
       <tr>
         <td class="voices-cell"><div class="vrow"><span class="vname">robot (on-device)</span><span class="vparams">567k params</span> <span class="pill mute">int8 · on-chip</span>
@@ -332,15 +332,15 @@
     <tbody>
       <tr>
         <td>SCOREQ</td>
-        <td class="best">4.13</td><td>3.51</td><td>3.94</td><td>3.81</td>
+        <td class="best">4.13</td><td>3.48</td><td>3.94</td><td>3.81</td>
       </tr>
       <tr>
         <td>UTMOS</td>
-        <td class="best">4.10</td><td>3.42</td><td>3.65</td><td>3.65</td>
+        <td class="best">4.10</td><td>3.38</td><td>3.65</td><td>3.65</td>
       </tr>
       <tr>
         <td>DNSMOS-SIG</td>
-        <td>3.61</td><td>3.50</td><td class="best">3.62</td><td>3.58</td>
+        <td>3.61</td><td>3.51</td><td class="best">3.62</td><td>3.58</td>
       </tr>
     </tbody>
   </table>
@@ -348,7 +348,7 @@
   crimson. sanoTTS amy leads on SCOREQ and UTMOS; on DNSMOS-SIG TinyTTS edges us by 0.01 &mdash; no single
   metric tells the whole story. <i>heart</i> is a different voice and recipe (24&nbsp;kHz, noise-shaping
   decoder) scored on the identical 24 sentences; <i>heart-nano</i>, its 294k sibling, scores
-  2.30 / 2.45 / 3.35 on the same three metrics.</p>
+  2.29 / 2.45 / 3.35 on the same three metrics.</p>
 
   <p class="lead" style="margin:32px 0 6px"><b>The size-quality frontier we traced</b></p>
   <svg viewBox="0 0 640 260" font-family="Lucida Console, Monaco, monospace" font-size="11"
@@ -547,15 +547,155 @@ async function loadMcuAssets(){
   const [front,dec]=await Promise.all(["front_q8.bin","model_q8.bin"].map(f=>fetchBytes(ASSET+f)));
   mcuAssets={front,dec}; return mcuAssets;
 }
+
+// ---- where voice weights come from --------------------------------------
+//
+// Hugging Face first, GitHub second, the copy beside this page last. That
+// order means the site does not have to host 63 MB of weights, and the two
+// CDNs serve them from closer to the visitor than it could.
+//
+// Hugging Face answers blob requests with "cache-control: no-store", so the
+// browser's HTTP cache keeps nothing between visits. Every blob therefore
+// goes through the Cache Storage API explicitly, which stores what the page
+// tells it to regardless of that header. Without it a returning visitor would
+// re-download the whole voice each time, which is worse than serving from
+// this origin ever was -- the caching is what makes the move safe, not a
+// nicety on top of it.
+const VOICE_HOSTS = {
+  hf:    {label:"Hugging Face", base:"https://huggingface.co/ampixa/sanoTTS/resolve/main/web/voices/"},
+  gh:    {label:"GitHub",       base:"https://raw.githubusercontent.com/Ampixa/sanoTTS/master/web/voices/"},
+  local: {label:"this site",    base:"voices/"},
+};
+const VOICE_CACHE = "sanotts-voices-v1";
+
+function voiceHostOrder(){
+  const pin = new URLSearchParams(location.search).get("voices");
+  if(pin && VOICE_HOSTS[pin]) return [pin];          // ?voices=hf|gh|local
+  // Serving this directory locally is how the page is developed; reaching for
+  // a CDN first there would break an offline machine and slow every reload.
+  const dev = location.hostname === "localhost" || location.hostname === "127.0.0.1" ||
+              location.protocol === "file:";
+  return dev ? ["local","hf","gh"] : ["hf","gh","local"];
+}
+
+async function voiceCache(){
+  // Missing on insecure origins and in some private windows. Not having it
+  // costs speed on a second visit, never correctness, so failure is silent.
+  try { return ("caches" in self) ? await caches.open(VOICE_CACHE) : null; }
+  catch(e){ return null; }
+}
+async function sha256Hex(bytes){
+  // crypto.subtle needs a secure context. Over plain http there is no hash to
+  // compare against and the byte-length check below stands alone.
+  if(!self.crypto || !self.crypto.subtle) return null;
+  const d = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(d)).map(b => b.toString(16).padStart(2,"0")).join("");
+}
+// Rejects a blob of the wrong size, or one whose sha256 does not match what
+// meta.json states. A truncated download or a stale mirror is far likelier
+// than an attack, and either produces audio that sounds plausible rather than
+// failing outright -- which is exactly the kind of bug worth catching here.
+async function voiceBytesOk(bytes, expect){
+  if(!expect) return true;
+  if(expect.bytes && bytes.length !== expect.bytes) return false;
+  if(expect.sha256){
+    const got = await sha256Hex(bytes);
+    if(got && got !== expect.sha256) return false;
+  }
+  return true;
+}
+
+// The two blobs of a voice download in parallel, so progress is aggregated
+// across them: one number that only goes up, rather than two interleaved ones
+// fighting over the same status line.
+function progressTracker(onProgress, label){
+  const totals = new Map(), have = new Map();
+  return function note(id, total, got){
+    if(total) totals.set(id, total);
+    have.set(id, got);
+    if(!onProgress) return;
+    let t = 0, g = 0;
+    totals.forEach(v => t += v);
+    have.forEach(v => g += v);
+    if(t) onProgress(label + " " + Math.floor(g * 100 / t) + "% of " +
+                     (t / 1048576).toFixed(1) + " MB");
+  };
+}
+
+async function fetchStream(url, note, id){
+  const r = await fetch(url);
+  if(!r.ok) throw new Error(r.status + " " + (r.statusText || ""));
+  const total = Number(r.headers.get("content-length")) || 0;
+  if(!r.body || !total){                       // no stream, no length: one shot
+    const bytes = new Uint8Array(await r.arrayBuffer());
+    if(note) note(id, bytes.length, bytes.length);
+    return bytes;
+  }
+  const reader = r.body.getReader();
+  const chunks = []; let got = 0;
+  for(;;){
+    const {done, value} = await reader.read();
+    if(done) break;
+    chunks.push(value); got += value.length;
+    if(note) note(id, total, got);
+  }
+  const out = new Uint8Array(got); let at = 0;
+  for(const c of chunks){ out.set(c, at); at += c.length; }
+  return out;
+}
+
+// `path` is "amy/front_f32.bin" -- the cache key is the path, not the URL, so
+// a voice already downloaded from one host is not fetched again from another.
+async function fetchVoiceFile(path, opts){
+  opts = opts || {};
+  const cache = await voiceCache();
+  const key = "/" + VOICE_CACHE + "/" + path;
+  if(cache && !opts.fresh){
+    const hit = await cache.match(key);
+    if(hit){
+      const bytes = new Uint8Array(await hit.arrayBuffer());
+      if(await voiceBytesOk(bytes, opts.expect)) return bytes;
+      await cache.delete(key);   // stale against meta.json, so fetch it again
+    }
+  }
+  const problems = [];
+  for(const name of voiceHostOrder()){
+    const host = VOICE_HOSTS[name];
+    try {
+      const bytes = await fetchStream(host.base + path, opts.note, path);
+      if(!(await voiceBytesOk(bytes, opts.expect)))
+        throw new Error("failed its size/sha256 check against meta.json");
+      if(cache){ try { await cache.put(key, new Response(bytes)); } catch(e){} }
+      return bytes;
+    } catch(e){ problems.push(host.label + ": " + ((e && e.message) || e)); }
+  }
+  throw new Error("could not fetch " + path + " (" + problems.join("; ") + ")");
+}
+
+// meta.json is about a kilobyte and decides which blobs to fetch and what to
+// check them against, so it is read from the network whenever one of the
+// hosts answers, and only falls back to the cached copy when none of them do.
+async function fetchVoiceJson(path){
+  let bytes;
+  try { bytes = await fetchVoiceFile(path, {fresh:true}); }
+  catch(err){
+    const cache = await voiceCache();
+    const hit = cache && await cache.match("/" + VOICE_CACHE + "/" + path);
+    if(!hit) throw err;
+    bytes = new Uint8Array(await hit.arrayBuffer());
+  }
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+
 // The Trellis-RIFT voice ships as ONE self-describing blob (metadata header +
 // 995,058 little-endian float32); snt_trellis splits it internally, so unlike
 // the piperlite voices there is no separate front/dec pair or meta.json.
 function loadTrellisBundle(onProgress){
   if(!trellisBundle){
     trellisBundle = (async () => {
-      if(onProgress) onProgress("downloading trellis voice model…");
       const t0 = performance.now();
-      const bytes = await fetchBytes("voices/trellis/bundle.bin");
+      const bytes = await fetchVoiceFile("trellis/bundle.bin",
+        {note: progressTracker(onProgress, "downloading trellis voice")});
       if(onProgress) onProgress("model loaded: " + (bytes.length/1048576).toFixed(1) +
         " MB in " + ((performance.now()-t0)/1000).toFixed(2) + " s");
       return bytes;
@@ -565,14 +705,15 @@ function loadTrellisBundle(onProgress){
 }
 function loadVoiceBundle(key, onProgress){
   if(!voiceBundles.has(key)){
-    const dir = "voices/" + key + "/";
     voiceBundles.set(key, (async () => {
-      if(onProgress) onProgress("downloading " + key + " voice model…");
       const t0 = performance.now();
-      const [meta, front, dec] = await Promise.all([
-        fetchJson(dir + "meta.json"),
-        fetchBytes(dir + "front_f32.bin"),
-        fetchBytes(dir + "dec_f32.bin"),
+      const meta = await fetchVoiceJson(key + "/meta.json");
+      const note = progressTracker(onProgress, "downloading " + key + " voice");
+      const [front, dec] = await Promise.all([
+        fetchVoiceFile(key + "/front_f32.bin",
+          {note, expect:{bytes:meta.front_bytes, sha256:meta.front_sha256}}),
+        fetchVoiceFile(key + "/dec_f32.bin",
+          {note, expect:{bytes:meta.dec_bytes, sha256:meta.dec_sha256}}),
       ]);
       const mb = ((front.length + dec.length) / 1048576).toFixed(1);
       if(onProgress) onProgress("model loaded: " + mb + " MB in " +
@@ -588,15 +729,16 @@ function loadVoiceBundle(key, onProgress){
 // against that exact export (meta.export_name).
 function loadNanoBundle(key, onProgress){
   if(!nanoBundles.has(key)){
-    const dir = "voices/" + key + "/";
     nanoBundles.set(key, (async () => {
-      if(onProgress) onProgress("downloading " + key + " voice model…");
       const t0 = performance.now();
-      const meta = await fetchJson(dir + "meta.json");
-      const [front, dec] = await Promise.all([fetchBytes(dir + meta.front), fetchBytes(dir + meta.dec)]);
-      if(front.length !== meta.front_bytes || dec.length !== meta.dec_bytes)
-        throw new Error(key + ": blob sizes " + front.length + "/" + dec.length +
-                        " do not match meta.json " + meta.front_bytes + "/" + meta.dec_bytes);
+      const meta = await fetchVoiceJson(key + "/meta.json");
+      const note = progressTracker(onProgress, "downloading " + key + " voice");
+      const [front, dec] = await Promise.all([
+        fetchVoiceFile(key + "/" + meta.front,
+          {note, expect:{bytes:meta.front_bytes, sha256:meta.front_sha256}}),
+        fetchVoiceFile(key + "/" + meta.dec,
+          {note, expect:{bytes:meta.dec_bytes, sha256:meta.dec_sha256}}),
+      ]);
       const mb = ((front.length + dec.length) / 1048576).toFixed(1);
       if(onProgress) onProgress("model loaded: " + mb + " MB in " +
         ((performance.now() - t0) / 1000).toFixed(2) + " s");

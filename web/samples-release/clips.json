@@ -38,7 +38,7 @@
  "english-heart": [
   {
    "n": 1,
-   "text": "Welcome! This entire voice runs in under four megabytes, with no cloud at all.",
+   "text": "Welcome! This entire voice runs right here in your browser, with no cloud at all.",
    "mp3": "english-heart-1.mp3"
   },
   {
@@ -50,7 +50,7 @@
  "english-heartnano": [
   {
    "n": 1,
-   "text": "Welcome! This entire voice runs in under four megabytes, with no cloud at all.",
+   "text": "Welcome! This entire voice runs in under four hundred kilobytes, with no cloud at all.",
    "mp3": "english-heartnano-1.mp3"
   },
   {
