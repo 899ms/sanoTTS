@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import statistics
 import sys
 import wave
@@ -27,6 +28,7 @@ import onnx
 import onnxruntime as ort
 from onnx import TensorProto, helper
 from piper.voice import PiperVoice
+from mexican_g2p_normalizer import normalize_mexican_g2p
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -85,6 +87,9 @@ FULL_LOGICAL_OUTPUTS = (
     "generator_conv_pre",
     "generator_first_upsample",
 )
+
+
+
 
 
 def parse_args() -> argparse.Namespace:
@@ -626,7 +631,8 @@ def build_pack(args: argparse.Namespace) -> dict[str, Any]:
     with manifest_path.open("w", encoding="utf-8") as out:
         for index, row in enumerate(rows, start=1):
             row_id = safe_row_id(index, int(row["_line_no"]))
-            text = str(row.get("target_text") or row.get("text") or "").strip()
+            raw_text = str(row.get("target_text") or row.get("text") or "").strip()
+            text = normalize_mexican_g2p(raw_text)
             sentence_phonemes = voice.phonemize(text)
             if not sentence_phonemes:
                 raise RuntimeError(f"{row_id}: Piper produced no sentence phonemes")
