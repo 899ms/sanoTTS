@@ -191,7 +191,9 @@ class EspeakEngine:
         except ImportError as exc:  # pragma: no cover - dependency missing
             raise FrontendError(
                 "the 'espeakng-loader' package is required for phonemization; "
-                "install it with `pip install espeakng-loader`"
+                "install it with `pip install sanotts[espeak]`. That extra is GPL-3.0 "
+                "and is why it is not installed by default; the English, Indonesian "
+                "and Vietnamese voices need no espeak at all."
             ) from exc
         try:
             from phonemizer.backend import EspeakBackend
@@ -199,7 +201,9 @@ class EspeakEngine:
         except ImportError as exc:  # pragma: no cover - dependency missing
             raise FrontendError(
                 "the 'phonemizer-fork' package is required for phonemization; "
-                "install it with `pip install phonemizer-fork`"
+                "install it with `pip install sanotts[espeak]`. That extra is GPL-3.0 "
+                "and is why it is not installed by default; the English, Indonesian "
+                "and Vietnamese voices need no espeak at all."
             ) from exc
 
         library_path = espeakng_loader.get_library_path()

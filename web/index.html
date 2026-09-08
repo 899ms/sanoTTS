@@ -62,6 +62,16 @@
            cursor:pointer; }
   button:hover:not(:disabled) { border-color:var(--accent); color:var(--accent); }
   button:disabled { opacity:.4; cursor:default; }
+  /* While a voice downloads, the primary button IS the progress bar: its
+     background fills left to right. A separate 6px bar under the controls was
+     easy to miss entirely -- the thing you just clicked is where you are
+     already looking. --p is set from JS as a percentage. */
+  button.dl { opacity:1; cursor:progress; color:var(--ink); border-color:var(--accent);
+              background:linear-gradient(to right,
+                var(--accent) 0%, var(--accent) var(--p,0%),
+                var(--bg) var(--p,0%), var(--bg) 100%);
+              background-size:100% 100%; }
+  button.dl:disabled { opacity:1; }
   button.sec { border-color:var(--rule); font-weight:normal; }
   .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
   .toggle { display:flex; gap:8px; align-items:center; color:var(--muted2);
@@ -101,6 +111,9 @@
   td.voices-cell .vparams { color:var(--muted2); font-size:13px; margin-left:6px; }
   td.voices-cell .vnote { display:block; color:var(--muted2); font-size:13px; margin-top:2px; }
   td.listen-cell { min-width:260px; width:300px; }
+  td.cer-cell { font-size:20px; font-weight:bold; color:var(--accent); white-space:nowrap;
+      width:1%; text-align:right; }
+  table.vtable thead th.cer-head { text-align:right; white-space:nowrap; }
   td.listen-cell audio { display:block; width:100%; min-width:240px; max-width:340px; height:32px; margin-bottom:11px; }
   td.listen-cell audio:last-child { margin-bottom:0; }
 
@@ -130,16 +143,72 @@
     td.lang-cell { margin-bottom:6px; }
     td.lang-cell .native { max-width:none; }
     td.listen-cell audio { max-width:100%; }
+    td.cer-cell { text-align:left; }
   }
 
-  .mascots { display:flex; gap:14px; flex-wrap:wrap; margin:14px 0; }
-  .mascots button.m { display:flex; flex-direction:column; align-items:center; gap:4px;
-      padding:10px 12px; border:2px solid var(--rule); background:var(--bg); cursor:pointer;
-      font-family:inherit; font-size:12px; color:var(--muted2); font-weight:normal; }
-  .mascots button.m img, .mascots button.m .emj { width:56px; height:56px; font-size:44px;
-      line-height:56px; image-rendering:pixelated; }
-  .mascots button.m .params { font-size:11px; color:var(--faint); }
-  .mascots button.m.sel { border-color:var(--accent); color:var(--ink); font-weight:bold; }
+  /* voice picker: one tile per language, one chip per size */
+  .mascots { display:grid; grid-template-columns:repeat(auto-fill, minmax(94px, 1fr));
+      gap:8px; margin:14px 0; }
+  .mascots .m { display:flex; flex-direction:column; align-items:center; gap:4px;
+      padding:7px 4px 6px; border:2px solid var(--rule); background:var(--bg); }
+  .mascots .m.on { border-color:var(--accent); }
+  .mascots .m .art { display:flex; flex-direction:column; align-items:center; gap:2px;
+      padding:0; border:none; background:none; cursor:pointer; width:100%;
+      font-family:inherit; font-weight:normal; }
+  .mascots .m .art:hover .name { color:var(--accent); }
+  .mascots img, .mascots .emj { width:46px; height:46px; font-size:36px; line-height:46px;
+      image-rendering:pixelated; }
+  .mascots .name { font-size:11.5px; line-height:1.2; color:var(--muted2); text-align:center; }
+  .mascots .m.on .name { color:var(--ink); font-weight:bold; }
+  .mascots .chips { display:flex; gap:3px; flex-wrap:wrap; justify-content:center; }
+  .mascots .chip { font-family:inherit; font-size:10px; font-weight:normal; line-height:1.4;
+      padding:1px 5px; border:1px solid var(--rule); background:var(--bg); color:var(--faint);
+      cursor:pointer; }
+  .mascots .chip:hover:not(:disabled) { border-color:var(--accent); color:var(--accent); }
+  .mascots .chip.sel { border-color:var(--accent); background:var(--accent); color:#fff;
+      font-weight:bold; }
+
+  /* one row per language: what we measured, and a live sample */
+  table.langtable { border-collapse:collapse; width:100%; margin:14px 0 8px; font-size:14px; }
+  table.langtable th { text-align:left; font-size:11px; letter-spacing:.5px; text-transform:uppercase;
+      color:var(--muted2); font-weight:normal; padding:0 10px 8px 0; border-bottom:2px solid var(--ink);
+      vertical-align:bottom; }
+  table.langtable td { padding:6px 10px 6px 0; vertical-align:middle;
+      border-top:1px solid var(--rule); }
+  table.langtable tbody tr:first-child td { border-top:none; }
+  td.lt-lang { font-weight:bold; white-space:nowrap; width:1%; }
+  th.lt-m, td.lt-m { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap;
+      width:1%; }
+  td.lt-m { font-weight:bold; color:var(--accent); }
+  /* an unmeasured cell must not be painted like a measured one */
+  td.lt-m.none { color:var(--faint); font-weight:normal; }
+  td.lt-m .alt { display:block; font-weight:normal; font-size:11px; color:var(--faint); }
+  td.lt-samp { padding-left:14px; }
+  button.samp { font-family:inherit; font-size:11px; font-weight:normal; line-height:1.5;
+      padding:2px 8px; margin:1px 5px 1px 0; border:1px solid var(--rule); background:var(--bg);
+      color:var(--muted2); cursor:pointer; }
+  button.samp:hover:not(:disabled) { border-color:var(--accent); color:var(--accent); }
+  button.samp.on { border-color:var(--accent); background:var(--accent); color:#fff; }
+  button.samp:disabled { opacity:1; }
+  .sampnote { display:block; font-size:10.5px; color:var(--faint); line-height:1.3;
+      margin-top:1px; min-height:0; }
+  /* On a phone the exact parameter count is the column worth losing: the size
+     chip already says 1.56M or ~511k, and the empty SCOREQ/UTMOS column is the
+     one making a point. */
+  @media (max-width:560px) {
+    /* Four narrow columns do not fit a phone, and the sample button is the one
+       thing on this table you cannot get anywhere else -- so the row stacks:
+       language and its two numbers on one line, the play controls under them. */
+    table.langtable { font-size:13px; }
+    table.langtable thead { display:none; }
+    table.langtable tbody tr { display:grid; grid-template-columns:1fr auto auto;
+        gap:2px 10px; padding:8px 0; border-top:1px solid var(--rule); }
+    table.langtable tbody tr:first-child { border-top:none; }
+    table.langtable td { display:block; border-top:none; padding:0; }
+    td.lt-m::before { content:attr(data-h) " "; font-size:9.5px; letter-spacing:.5px;
+        text-transform:uppercase; color:var(--muted2); font-weight:normal; }
+    td.lt-samp { grid-column:1 / -1; padding-left:0; margin-top:4px; }
+  }
   .copyright { text-align:center; color:var(--faint); font-size:14px; margin-top:8px; }
 
   @media (max-width:720px) {
@@ -163,9 +232,43 @@
   <p class="statement">The smallest neural text-to-speech family we know of &mdash;
   and it plays right here, live, in your browser.</p>
   <p class="lead" style="text-align:center">a full neural stack &mdash; duration &rarr; acoustic &rarr; decoder &mdash;
-  quantized to int8, phonemizer and all. Below: hear every released voice, then synthesize live on this page.</p>
+  quantized to int8, phonemizer and all. 28 voices, 16 languages, all spoken on this page.</p>
 
-  <div class="cta-wrap"><a class="cta" href="#live">▶ Synthesize live — type anything, pick a voice</a></div>
+  <hr>
+
+  <h2 id="live">Synthesize live in your browser</h2>
+  <p class="note">Type anything. The text is phonemized by <b>espeak-ng compiled to
+  WebAssembly</b> (the same 275&nbsp;KB port that runs on the chip) and spoken by that
+  voice's own neural stack &mdash; all client-side, no server. Pick a voice:</p>
+
+  <div class="mascots" id="mascots"></div>
+
+  <div class="row" style="margin-top:16px">
+    <textarea id="text" maxlength="300" rows="4"
+           style="flex:1;min-width:300px;width:100%;font:inherit;font-size:18px;line-height:1.5;
+           padding:18px 20px;border:2px solid var(--ink);background:var(--bg);color:var(--ink);
+           resize:vertical">Hello! I am a tiny voice living in your browser.</textarea>
+  </div>
+  <div class="row" style="margin-top:10px">
+    <button id="go" disabled>Synthesize &amp; play</button>
+    <button id="play" class="sec" disabled>&#9654; Play again</button>
+    <span id="state" class="note">loading runtime&hellip;</span>
+  </div>
+  <table class="stat" id="stats">
+    <tr><td>Phonemes</td><td id="phon">&mdash;</td></tr>
+    <tr><td>Audio produced</td><td id="dur">&mdash;</td></tr>
+    <tr><td>Time (this CPU)</td><td id="time">&mdash;</td></tr>
+    <tr><td>Speed on this machine</td><td id="rtf">&mdash;</td></tr>
+  </table>
+  <div id="log"></div>
+  <p class="note" style="margin-top:16px">The speed shown is <b>this browser on your CPU</b> &mdash;
+  the on-device English voice runs at 0.22&times; real time on an ESP32-S3. Every voice in the
+  picker synthesizes your typed text live, right here, with no server involved. Where a language
+  offers two sizes, the chips under its mascot switch between them.
+  <i>heart</i> and <i>heart-nano</i> take a different route from text to sound than the other
+  voices (a 100-band mel interface into a noise-shaping decoder), so they load their own small
+  runtime; <i>heart-nano</i> runs the int8 arithmetic of the microcontroller build unchanged.</p>
+
 
   <ul class="hl">
     <li>smallest neural TTS family known &mdash; <b>294k to 2.3M parameters</b></li>
@@ -174,93 +277,24 @@
     <li>under <b>4&nbsp;MB</b> per voice, zero dependencies (espeak-ng phonemizer included)</li>
     <li><b>11 voices</b> across <b>6 languages</b> &mdash; English, Nepali (नेपाली), Hindi (हिन्दी),
       Vietnamese (Tiếng Việt), Indonesian (Bahasa), Chinese (中文) &mdash; all synthesizing live on this page</li>
+    <li><b>new:</b> <b>ten more languages</b> &mdash; German, French, Spanish, Italian,
+      Portuguese, Russian, Czech, Romanian, Turkish and Arabic &mdash; added 2026-09-08, each in a
+      <b>1.56M</b> and (for eight of them) a <b>~511k</b> size, all synthesizing live in the picker
+      above. That is <b>16 languages</b> in the browser.
+      <a href="#compare">What they score, and what that score does not tell you</a></li>
     <li><b>new:</b> <b>heart</b>, our best-sounding voice at <b>2.27M parameters</b> and 24&nbsp;kHz, and
       <b>heart-nano</b>, the same voice squeezed into <b>294k parameters</b> &mdash; a complete
-      text-to-speech stack, int8, in 337&nbsp;KB. Both synthesize live below</li>
+      text-to-speech stack, int8, in 337&nbsp;KB. Both synthesize live in the picker above</li>
     <li><b>new, experimental:</b> <b>trellis</b> &mdash; a whole new architecture that fits a
       complete voice in <b>under 1M parameters</b> and runs about <b>5&times; faster</b> in the
-      browser than our 1.4M&ndash;1.8M voices. It synthesizes live below too &mdash; a research
+      browser than our 1.4M&ndash;1.8M voices. It synthesizes live up there too &mdash; a research
       preview, not yet as natural-sounding as <i>amy</i></li>
     <li>open source, <b>GPL-3.0</b></li>
   </ul>
 
   <hr>
 
-  <h2>Hear the voices</h2>
-  <p class="note">One fresh sentence per voice, rendered by the models themselves.
-  <b>294k to 2.3M parameters</b> — every voice fits in a few megabytes, the smallest in a third of one.</p>
-
-  <table class="vtable">
-    <thead><tr><th>Language</th><th>Voice</th><th>Listen</th></tr></thead>
-    <tbody>
-      <tr class="lang-first">
-        <td class="lang-cell" rowspan="8">English 🇺🇸</td>
-        <td class="voices-cell"><div class="vrow"><span class="vname">amy</span><span class="vparams">1.46M params</span> <span class="pill">SCOREQ 4.13</span></div></td>
-        <td class="listen-cell"><audio controls preload="none" src="samples-release/english-amy-1.mp3" title="Welcome! This entire voice runs in under four megabytes, with no cloud at all."></audio></td>
-      </tr>
-      <tr>
-        <td class="voices-cell"><div class="vrow"><span class="vname">kristin</span><span class="vparams">1.40M params</span> <span class="pill">SCOREQ 4.09</span></div></td>
-        <td class="listen-cell"><audio controls preload="none" src="samples-release/english-kristin-1.mp3" title="Welcome! This entire voice runs in under four megabytes, with no cloud at all."></audio></td>
-      </tr>
-      <tr>
-        <td class="voices-cell"><div class="vrow"><span class="vname">hfc</span><span class="vparams">1.83M params</span> <span class="pill">SCOREQ 3.94</span></div></td>
-        <td class="listen-cell"><audio controls preload="none" src="samples-release/english-hfc-1.mp3" title="Welcome! This entire voice runs in under four megabytes, with no cloud at all."></audio></td>
-      </tr>
-      <tr>
-        <td class="voices-cell"><div class="vrow"><span class="vname">amy-small</span><span class="vparams">1.08M params</span> <span class="pill">SCOREQ 3.70</span></div></td>
-        <td class="listen-cell"><audio controls preload="none" src="samples-release/english-amy-small-1.mp3" title="Welcome! This entire voice runs in under four megabytes, with no cloud at all."></audio></td>
-      </tr>
-      <tr>
-        <td class="voices-cell"><div class="vrow"><span class="vname">heart</span><span class="vparams">2.27M params</span> <span class="pill">SCOREQ 3.48</span> <span class="pill ghost">24 kHz</span>
-          <span class="vnote">a different recipe from the voices above: a mel-100 acoustic model feeding a noise-shaping decoder, at 24&nbsp;kHz instead of 22.05. Scored on the same 24 sentences as the rest of this table. It synthesizes your text live below, running the exact float model (correlation 1.000000 against the training-side output on our golden set).</span></div></td>
-        <td class="listen-cell"><audio controls preload="none" src="samples-release/english-heart-1.mp3" title="Welcome! This entire voice runs right here in your browser, with no cloud at all."></audio></td>
-      </tr>
-      <tr>
-        <td class="voices-cell"><div class="vrow"><span class="vname">trellis</span><span class="vparams">995k params</span> <span class="pill ghost">research preview</span>
-          <span class="vnote">a new low-rank factorized architecture: an entire text-to-wave stack in under one million parameters at 24&nbsp;kHz, and the quickest of our full-size browser voices. Honest caveat — in our own blind listening test <i>amy</i> above still wins, so treat this as a look at where the family is heading rather than our best voice today. It synthesizes your text live below.</span></div></td>
-        <td class="listen-cell"><audio controls preload="none" src="samples-release/english-trellis-1.mp3" title="Welcome! This entire voice runs in under four megabytes, with no cloud at all."></audio></td>
-      </tr>
-      <tr>
-        <td class="voices-cell"><div class="vrow"><span class="vname">heart-nano</span><span class="vparams">294k params</span> <span class="pill">SCOREQ 2.29</span> <span class="pill mute">int8 · 337 KB</span>
-          <span class="vnote">the smallest complete neural text-to-speech stack we have built: duration, acoustic and decoder in 294,279 parameters, int8, 24&nbsp;kHz. Clearly intelligible, clearly not as clean as the voices above &mdash; you can hear what a tenth of a megabyte buys. What plays below is the same int8 arithmetic a microcontroller would run.</span></div></td>
-        <td class="listen-cell"><audio controls preload="none" src="samples-release/english-heartnano-1.mp3" title="Welcome! This entire voice runs in under four hundred kilobytes, with no cloud at all."></audio></td>
-      </tr>
-      <tr>
-        <td class="voices-cell"><div class="vrow"><span class="vname">robot (on-device)</span><span class="vparams">567k params</span> <span class="pill mute">int8 · on-chip</span>
-          <span class="vnote">the model that runs faster than real time on a $3 ESP32-S3 — same weights, same phonemizer</span></div></td>
-        <td class="listen-cell"><audio controls preload="none" src="samples-release/mcu-745k.mp3" title="This clip is the on-device model's own output, bit-exact with the chip."></audio></td>
-      </tr>
-      <tr class="lang-first">
-        <td class="lang-cell">Nepali 🇳🇵<span class="native">नमस्ते! तपाईंलाई भेटेर खुशी लाग्यो।</span></td>
-        <td class="voices-cell"><div class="vrow"><span class="vname">Nepali</span><span class="vparams">1.47M params</span></div></td>
-        <td class="listen-cell"><audio controls preload="none" src="samples-release/nepali-1.mp3" title="नमस्ते! तपाईंलाई भेटेर खुशी लाग्यो।"></audio></td>
-      </tr>
-      <tr class="lang-first">
-        <td class="lang-cell">Hindi 🇮🇳<span class="native">नमस्ते! आपसे मिलकर बहुत खुशी हुई।</span></td>
-        <td class="voices-cell"><div class="vrow"><span class="vname">Hindi</span><span class="vparams">1.50M params</span></div></td>
-        <td class="listen-cell"><audio controls preload="none" src="samples-release/hindi-1.mp3" title="नमस्ते! आपसे मिलकर बहुत खुशी हुई।"></audio></td>
-      </tr>
-      <tr class="lang-first">
-        <td class="lang-cell">Vietnamese 🇻🇳<span class="native">Xin chào! Rất vui được gặp bạn hôm nay.</span></td>
-        <td class="voices-cell"><div class="vrow"><span class="vname">Vietnamese</span><span class="vparams">1.46M params</span></div></td>
-        <td class="listen-cell"><audio controls preload="none" src="samples-release/vietnamese-1.mp3" title="Xin chào! Rất vui được gặp bạn hôm nay."></audio></td>
-      </tr>
-      <tr class="lang-first">
-        <td class="lang-cell">Indonesian 🇮🇩<span class="native">Halo! Senang bertemu dengan Anda hari ini.</span></td>
-        <td class="voices-cell"><div class="vrow"><span class="vname">Indonesian</span><span class="vparams">1.46M params</span></div></td>
-        <td class="listen-cell"><audio controls preload="none" src="samples-release/indonesian-1.mp3" title="Halo! Senang bertemu dengan Anda hari ini."></audio></td>
-      </tr>
-      <tr class="lang-first">
-        <td class="lang-cell">Chinese 🇨🇳<span class="native">你好！很高兴今天见到你。</span></td>
-        <td class="voices-cell"><div class="vrow"><span class="vname">Chinese</span><span class="vparams">1.50M params</span></div></td>
-        <td class="listen-cell"><audio controls preload="none" src="samples-release/chinese-1.mp3" title="你好！很高兴今天见到你。"></audio></td>
-      </tr>
-    </tbody>
-  </table>
-
-  <hr>
-
-  <h2>How it compares</h2>
+  <h2 id="compare">How it compares</h2>
   <p class="note">Measured with our no-reference harness (SCOREQ / UTMOS / DNSMOS-SIG) on the
   same 24-sentence diverse set, run identically across every model below.</p>
 
@@ -380,39 +414,137 @@
   <p class="note">Same voice (amy), same duration/acoustic recipe &mdash; only decoder size changes.
   Quality lives in the decoder: doubling it from 1.09M to 1.84M params moves SCOREQ from 3.70 to 4.16.</p>
 
-  <hr>
-
-  <h2 id="live">Synthesize live in your browser</h2>
-  <p class="note">Type anything. The text is phonemized by <b>espeak-ng compiled to
-  WebAssembly</b> (the same 275&nbsp;KB port that runs on the chip) and spoken by that
-  voice's own neural stack &mdash; all client-side, no server. Pick a voice:</p>
-
-  <div class="mascots" id="mascots"></div>
-
-  <div class="row" style="margin-top:16px">
-    <textarea id="text" maxlength="300" rows="4"
-           style="flex:1;min-width:300px;width:100%;font:inherit;font-size:18px;line-height:1.5;
-           padding:18px 20px;border:2px solid var(--ink);background:var(--bg);color:var(--ink);
-           resize:vertical">Hello! I am a tiny voice living in your browser.</textarea>
-  </div>
-  <div class="row" style="margin-top:10px">
-    <button id="go" disabled>Synthesize &amp; play</button>
-    <button id="play" class="sec" disabled>&#9654; Play again</button>
-    <span id="state" class="note">loading runtime&hellip;</span>
-  </div>
-  <table class="stat" id="stats">
-    <tr><td>Phonemes</td><td id="phon">&mdash;</td></tr>
-    <tr><td>Audio produced</td><td id="dur">&mdash;</td></tr>
-    <tr><td>Compute time (this CPU)</td><td id="time">&mdash;</td></tr>
-    <tr><td>Speed on this machine</td><td id="rtf">&mdash;</td></tr>
+  <p class="lead" style="margin:32px 0 6px"><b>Every language we ship, and what we know about it</b></p>
+  <p class="note">Two numbers and a play button. <b>WER</b> is Whisper word error rate over 16
+  held-out Tatoeba sentences per language &mdash; conversational text, deliberately a different
+  domain from the corpus these voices were distilled on. <b>SCOREQ</b> is a no-reference quality
+  predictor. The <b>sample</b> buttons synthesize a sentence in that language on this page, right
+  now, through the same runtime as the picker above &mdash; nothing here is a pre-rendered clip.
+  Where a language ships in two sizes, both are here and both are playable.</p>
+  <table class="langtable">
+    <thead>
+      <tr><th>Language</th><th class="lt-m">WER</th><th class="lt-m">SCOREQ</th><th>Sample</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="lt-lang">Portuguese &#x1F1E7;&#x1F1F7;</td>
+        <td class="lt-m" data-h="WER">0.038</td>
+        <td class="lt-m none" data-h="SCOREQ">&mdash;</td>
+        <td class="lt-samp"><button class="samp" data-voice="portuguese" title="synthesize a sentence of Portuguese live, right now">&#9654; 1.57M</button><button class="samp" data-voice="portuguese-tiny" title="synthesize a sentence of Portuguese live, right now">&#9654; 512k</button><span class="sampnote"></span></td>
+      </tr>
+      <tr>
+        <td class="lt-lang">Italian &#x1F1EE;&#x1F1F9;</td>
+        <td class="lt-m" data-h="WER">0.080</td>
+        <td class="lt-m none" data-h="SCOREQ">&mdash;</td>
+        <td class="lt-samp"><button class="samp" data-voice="italian" title="synthesize a sentence of Italian live, right now">&#9654; 1.57M</button><button class="samp" data-voice="italian-tiny" title="synthesize a sentence of Italian live, right now">&#9654; 512k</button><span class="sampnote"></span></td>
+      </tr>
+      <tr>
+        <td class="lt-lang">German &#x1F1E9;&#x1F1EA;</td>
+        <td class="lt-m" data-h="WER">0.099<span class="alt">512k · 0.145</span></td>
+        <td class="lt-m none" data-h="SCOREQ">&mdash;</td>
+        <td class="lt-samp"><button class="samp" data-voice="german" title="synthesize a sentence of German live, right now">&#9654; 1.57M</button><button class="samp" data-voice="german-tiny" title="synthesize a sentence of German live, right now">&#9654; 512k</button><span class="sampnote"></span></td>
+      </tr>
+      <tr>
+        <td class="lt-lang">Russian &#x1F1F7;&#x1F1FA;</td>
+        <td class="lt-m" data-h="WER">0.120</td>
+        <td class="lt-m none" data-h="SCOREQ">&mdash;</td>
+        <td class="lt-samp"><button class="samp" data-voice="russian" title="synthesize a sentence of Russian live, right now">&#9654; 1.57M</button><button class="samp" data-voice="russian-tiny" title="synthesize a sentence of Russian live, right now">&#9654; 512k</button><span class="sampnote"></span></td>
+      </tr>
+      <tr>
+        <td class="lt-lang">Spanish &#x1F1EA;&#x1F1F8;</td>
+        <td class="lt-m" data-h="WER">0.147</td>
+        <td class="lt-m none" data-h="SCOREQ">&mdash;</td>
+        <td class="lt-samp"><button class="samp" data-voice="spanish" title="synthesize a sentence of Spanish live, right now">&#9654; 1.56M</button><button class="samp" data-voice="spanish-tiny" title="synthesize a sentence of Spanish live, right now">&#9654; 510k</button><span class="sampnote"></span></td>
+      </tr>
+      <tr>
+        <td class="lt-lang">French &#x1F1EB;&#x1F1F7;</td>
+        <td class="lt-m" data-h="WER">0.221</td>
+        <td class="lt-m none" data-h="SCOREQ">&mdash;</td>
+        <td class="lt-samp"><button class="samp" data-voice="french" title="synthesize a sentence of French live, right now">&#9654; 1.57M</button><span class="sampnote"></span></td>
+      </tr>
+      <tr>
+        <td class="lt-lang">Indonesian &#x1F1EE;&#x1F1E9;</td>
+        <td class="lt-m" data-h="WER">0.256</td>
+        <td class="lt-m" data-h="SCOREQ">1.714</td>
+        <td class="lt-samp"><button class="samp" data-voice="indonesian" title="synthesize a sentence of Indonesian live, right now">&#9654; 1.46M</button><span class="sampnote"></span></td>
+      </tr>
+      <tr>
+        <td class="lt-lang">Arabic &#x1F1EF;&#x1F1F4;</td>
+        <td class="lt-m" data-h="WER">0.274</td>
+        <td class="lt-m none" data-h="SCOREQ">&mdash;</td>
+        <td class="lt-samp"><button class="samp" data-voice="arabic" title="synthesize a sentence of Arabic live, right now">&#9654; 1.57M</button><span class="sampnote"></span></td>
+      </tr>
+      <tr>
+        <td class="lt-lang">Turkish &#x1F1F9;&#x1F1F7;</td>
+        <td class="lt-m" data-h="WER">0.303</td>
+        <td class="lt-m none" data-h="SCOREQ">&mdash;</td>
+        <td class="lt-samp"><button class="samp" data-voice="turkish" title="synthesize a sentence of Turkish live, right now">&#9654; 1.56M</button><button class="samp" data-voice="turkish-tiny" title="synthesize a sentence of Turkish live, right now">&#9654; 510k</button><span class="sampnote"></span></td>
+      </tr>
+      <tr>
+        <td class="lt-lang">Czech &#x1F1E8;&#x1F1FF;</td>
+        <td class="lt-m" data-h="WER">0.351</td>
+        <td class="lt-m none" data-h="SCOREQ">&mdash;</td>
+        <td class="lt-samp"><button class="samp" data-voice="czech" title="synthesize a sentence of Czech live, right now">&#9654; 1.57M</button><button class="samp" data-voice="czech-tiny" title="synthesize a sentence of Czech live, right now">&#9654; 513k</button><span class="sampnote"></span></td>
+      </tr>
+      <tr>
+        <td class="lt-lang">Romanian &#x1F1F7;&#x1F1F4;</td>
+        <td class="lt-m" data-h="WER">0.392</td>
+        <td class="lt-m none" data-h="SCOREQ">&mdash;</td>
+        <td class="lt-samp"><button class="samp" data-voice="romanian" title="synthesize a sentence of Romanian live, right now">&#9654; 1.57M</button><button class="samp" data-voice="romanian-tiny" title="synthesize a sentence of Romanian live, right now">&#9654; 512k</button><span class="sampnote"></span></td>
+      </tr>
+      <tr>
+        <td class="lt-lang">Vietnamese &#x1F1FB;&#x1F1F3;</td>
+        <td class="lt-m" data-h="WER">0.468</td>
+        <td class="lt-m" data-h="SCOREQ">1.525</td>
+        <td class="lt-samp"><button class="samp" data-voice="vietnamese" title="synthesize a sentence of Vietnamese live, right now">&#9654; 1.46M</button><span class="sampnote"></span></td>
+      </tr>
+      <tr>
+        <td class="lt-lang">English &#x1F1FA;&#x1F1F8;</td>
+        <td class="lt-m none" data-h="WER">&mdash;</td>
+        <td class="lt-m" data-h="SCOREQ">heart 3.479<span class="alt">heart-nano 2.294</span></td>
+        <td class="lt-samp"><button class="samp" data-voice="amy" title="synthesize a sentence of English live, right now">&#9654; amy</button><button class="samp" data-voice="heart" title="synthesize a sentence of English live, right now">&#9654; heart</button><button class="samp" data-voice="heartnano" title="synthesize a sentence of English live, right now">&#9654; heart-nano</button><span class="sampnote"></span></td>
+      </tr>
+      <tr>
+        <td class="lt-lang">Nepali &#x1F1F3;&#x1F1F5;</td>
+        <td class="lt-m none" data-h="WER">&mdash;</td>
+        <td class="lt-m none" data-h="SCOREQ">&mdash;</td>
+        <td class="lt-samp"><button class="samp" data-voice="nepali" title="synthesize a sentence of Nepali live, right now">&#9654; 1.47M</button><span class="sampnote"></span></td>
+      </tr>
+      <tr>
+        <td class="lt-lang">Hindi &#x1F1EE;&#x1F1F3;</td>
+        <td class="lt-m none" data-h="WER">&mdash;</td>
+        <td class="lt-m none" data-h="SCOREQ">&mdash;</td>
+        <td class="lt-samp"><button class="samp" data-voice="hindi" title="synthesize a sentence of Hindi live, right now">&#9654; 1.50M</button><span class="sampnote"></span></td>
+      </tr>
+      <tr>
+        <td class="lt-lang">Chinese &#x1F1E8;&#x1F1F3;</td>
+        <td class="lt-m none" data-h="WER">&mdash;</td>
+        <td class="lt-m none" data-h="SCOREQ">&mdash;</td>
+        <td class="lt-samp"><button class="samp" data-voice="chinese" title="synthesize a sentence of Chinese live, right now">&#9654; 1.50M</button><span class="sampnote"></span></td>
+      </tr>
+    </tbody>
   </table>
-  <div id="log"></div>
-  <p class="note" style="margin-top:16px">The speed shown is <b>this browser on your CPU</b> &mdash;
-  the on-device English voice runs at 0.22&times; real time on an ESP32-S3. Every mascot above
-  (marked &#9679;) synthesizes your typed text live, right here, with no server involved.
-  <i>heart</i> and <i>heart-nano</i> take a different route from text to sound than the other
-  voices (a 100-band mel interface into a noise-shaping decoder), so they load their own small
-  runtime; <i>heart-nano</i> runs the int8 arithmetic of the microcontroller build unchanged.</p>
+  <p class="note"><b>The empty cells mean unmeasured &mdash; not zero, and not good.</b> Nothing in
+  this table is imputed: no number is carried across from one language to another, and none of the
+  ten languages added on 2026-09-08 has a SCOREQ at all. The two columns are also not the same
+  question. WER asks whether the words come through; SCOREQ asks how it sounds. On the voices where
+  we have both, the second answer is far less flattering: Indonesian reads <b>0.256</b> word error
+  &mdash; the words arrive &mdash; and still scores <b>1.714</b>, against <b>3.479</b> for
+  <i>heart</i> in English. So a low WER above is evidence a voice is <i>intelligible</i>, and is not
+  evidence that it sounds good. Whether the ten land nearer 1.5 or nearer 3.5 we have not measured,
+  and we are not going to guess it for you &mdash; press play.</p>
+  <p class="note">Three limits worth naming. The SCOREQ figures come from a different evaluation set
+  than the WER ones (24 diverse English sentences for <i>heart</i>, 24 held-out Tatoeba sentences per
+  language for Indonesian and Vietnamese), so the two columns are not a head-to-head ranking. SCOREQ
+  is a predictor <b>trained largely on English</b>, and comparing its output across languages is not
+  an established use of it &mdash; a limit of the instrument, not a hedge about the result. And 16
+  sentences per language is directional, not precise; no listening test has been run on any of the
+  ten. Czech, Romanian and French are the three whose error rate got <i>worse</i> on unseen text, so
+  they are the ones to press first. The Indonesian and Vietnamese rows are the espeak arm of a
+  paired A/B &mdash; the phoneme path this page actually runs.
+  (<code>experiments/evidence/ood-tatoeba-20260908.json</code>,
+  <code>idvi-espeak-free-ab-20260904.json</code>,
+  <code>heart-diverse24-remeasure-20260904.json</code>.)</p>
 
   <hr>
 
@@ -471,6 +603,36 @@ const VOICES = [
     nano:true},
   {key:"heartnano",label:"heart-nano", params:"294k",  flag:"\uD83C\uDDFA\uD83C\uDDF8", live:true, emj:"\uD83D\uDC95",
     nano:true},
+  // --- added 2026-09-08: ten more languages, each in two sizes ------------
+  // Same SaanoVoice lane as vietnamese/indonesian/nepali/hindi/chinese above
+  // -- nothing new in the runtime -- so espeak_voice, g2p_voice_slot and
+  // length_scale all travel in web/voices/<key>/meta.json and this table
+  // carries none of them. Two of them need work before the phonemizer, wired
+  // in synthVoice: Russian fetches its stress lexicon per utterance, Arabic
+  // runs piper's diacritizer first.
+  //
+  // `group` is what the picker draws as ONE tile: the 1.56M voice and its
+  // ~511k sibling share a mascot and appear as two size chips, so twenty-eight
+  // voices fit in twenty tiles. fr_FR and ar_JO were never trained small, so
+  // they have a single chip.
+  {key:"german", group:"german", label:"German", params:"1.57M", exact:1565324, flag:"\uD83C\uDDE9\uD83C\uDDEA", live:true, emj:"\uD83E\uDD8C"},
+  {key:"german-tiny", group:"german", label:"German", params:"512k", exact:511611, flag:"\uD83C\uDDE9\uD83C\uDDEA", live:true, emj:"\uD83E\uDD8C"},
+  {key:"french", group:"french", label:"French", params:"1.57M", exact:1565324, flag:"\uD83C\uDDEB\uD83C\uDDF7", live:true, emj:"\uD83D\uDC13"},
+  {key:"spanish", group:"spanish", label:"Spanish", params:"1.56M", exact:1562924, flag:"\uD83C\uDDEA\uD83C\uDDF8", live:true, emj:"\uD83D\uDC02"},
+  {key:"spanish-tiny", group:"spanish", label:"Spanish", params:"510k", exact:510411, flag:"\uD83C\uDDEA\uD83C\uDDF8", live:true, emj:"\uD83D\uDC02"},
+  {key:"italian", group:"italian", label:"Italian", params:"1.57M", exact:1565484, flag:"\uD83C\uDDEE\uD83C\uDDF9", live:true, emj:"\uD83D\uDC3A"},
+  {key:"italian-tiny", group:"italian", label:"Italian", params:"512k", exact:511691, flag:"\uD83C\uDDEE\uD83C\uDDF9", live:true, emj:"\uD83D\uDC3A"},
+  {key:"portuguese", group:"portuguese", label:"Portuguese", params:"1.57M", exact:1565324, flag:"\uD83C\uDDE7\uD83C\uDDF7", live:true, emj:"\uD83E\uDD9C"},
+  {key:"portuguese-tiny", group:"portuguese", label:"Portuguese", params:"512k", exact:511611, flag:"\uD83C\uDDE7\uD83C\uDDF7", live:true, emj:"\uD83E\uDD9C"},
+  {key:"russian", group:"russian", label:"Russian", params:"1.57M", exact:1566764, flag:"\uD83C\uDDF7\uD83C\uDDFA", live:true, emj:"\uD83D\uDC3B"},
+  {key:"russian-tiny", group:"russian", label:"Russian", params:"512k", exact:512331, flag:"\uD83C\uDDF7\uD83C\uDDFA", live:true, emj:"\uD83D\uDC3B"},
+  {key:"czech", group:"czech", label:"Czech", params:"1.57M", exact:1568044, flag:"\uD83C\uDDE8\uD83C\uDDFF", live:true, emj:"\uD83E\uDD94"},
+  {key:"czech-tiny", group:"czech", label:"Czech", params:"513k", exact:512971, flag:"\uD83C\uDDE8\uD83C\uDDFF", live:true, emj:"\uD83E\uDD94"},
+  {key:"romanian", group:"romanian", label:"Romanian", params:"1.57M", exact:1565164, flag:"\uD83C\uDDF7\uD83C\uDDF4", live:true, emj:"\uD83D\uDC11"},
+  {key:"romanian-tiny", group:"romanian", label:"Romanian", params:"512k", exact:511531, flag:"\uD83C\uDDF7\uD83C\uDDF4", live:true, emj:"\uD83D\uDC11"},
+  {key:"turkish", group:"turkish", label:"Turkish", params:"1.56M", exact:1562284, flag:"\uD83C\uDDF9\uD83C\uDDF7", live:true, emj:"\uD83D\uDC08"},
+  {key:"turkish-tiny", group:"turkish", label:"Turkish", params:"510k", exact:510091, flag:"\uD83C\uDDF9\uD83C\uDDF7", live:true, emj:"\uD83D\uDC08"},
+  {key:"arabic", group:"arabic", label:"Arabic", params:"1.57M", exact:1566124, flag:"\uD83C\uDDEF\uD83C\uDDF4", live:true, emj:"\uD83D\uDC2A"},
 ];
 let voice = VOICES[0];
 // Native default sentence per voice, swapped into the textarea on every mascot
@@ -489,38 +651,78 @@ const DEFAULT_TEXT = {
   nepali:  "नमस्ते! आज मौसम धेरै राम्रो छ।",
   hindi:   "नमस्ते! आज मौसम बहुत अच्छा है।",
   chinese: "你好！今天天气很好。",
+  german:     "Hallo! Ich bin eine winzige Stimme in deinem Browser.",
+  french:     "Bonjour ! Je suis une toute petite voix dans votre navigateur.",
+  spanish:    "¡Hola! Soy una voz diminuta que vive en tu navegador.",
+  italian:    "Ciao! Sono una vocina che vive nel tuo browser.",
+  portuguese: "Olá! Sou uma vozinha que mora no seu navegador.",
+  russian:    "Привет! Я крошечный голос в вашем браузере.",
+  czech:      "Ahoj! Jsem malý hlas ve tvém prohlížeči.",
+  romanian:   "Salut! Sunt o voce mică ce trăiește în browserul tău.",
+  turkish:    "Merhaba! Tarayıcınızda yaşayan küçük bir sesim.",
+  arabic:     "مرحبا! أنا صوت صغير يعيش في متصفحك.",
 };
 
+// The picker draws one TILE per `group` (a language, or a one-off voice), with
+// one chip per size inside it. Twenty-eight voices in twenty tiles: the two
+// sizes of a language are the same voice at two budgets, not two entries to
+// scan past, and at ~28 separate blocks the picker stopped fitting on screen.
+function selectVoice(v) {
+  voice = v; renderMascots(); updateUI();
+  const t = DEFAULT_TEXT[v.key] !== undefined ? DEFAULT_TEXT[v.key] : DEFAULT_TEXT[v.group];
+  if (t !== undefined) $("text").value = t;
+  // Lazy-fetch this voice's blobs on select so the first click of
+  // "Synthesize" doesn't pay the network round-trip; synth() awaits the
+  // same cached promise if the prefetch hasn't resolved yet.
+  if (v.trellis) loadTrellisBundle(voiceProgress).catch(e => log("prefetch trellis: " + (e && e.message || e)));
+  else if (v.nano) loadNanoBundle(v.key, voiceProgress).catch(e => log("prefetch " + v.key + ": " + (e && e.message || e)));
+  else if (v.key !== "mcu") loadVoiceBundle(v.key, voiceProgress).catch(e => log("prefetch " + v.key + ": " + (e && e.message || e)));
+}
 function renderMascots() {
   const box = $("mascots");
   box.innerHTML = "";
+  const order = [], byGroup = new Map();
   for (const v of VOICES) {
-    const b = document.createElement("button");
-    b.className = "m" + (v === voice ? " sel" : "");
+    const g = v.group || v.key;
+    if (!byGroup.has(g)) { byGroup.set(g, []); order.push(g); }
+    byGroup.get(g).push(v);
+  }
+  for (const g of order) {
+    const sizes = byGroup.get(g), head = sizes[0];
+    const tile = document.createElement("div");
+    tile.className = "m" + (sizes.indexOf(voice) >= 0 ? " on" : "");
+    const art = document.createElement("button");
+    art.className = "art";
+    art.title = "synthesizes your text live";
+    // The languages added on 2026-09-08 now have mascot art of their own
+    // (web/assets/mascots/generate_mascots.py); the emoji stays as the
+    // fallback for anything whose PNG is missing.
     const img = document.createElement("img");
-    img.src = "assets/mascots/" + (v.key==="mcu"?"mcu":v.key) + ".png";
-    img.alt = v.label;
-    img.onerror = () => { const d=document.createElement("div"); d.className="emj";
-                          d.textContent=v.emj; img.replaceWith(d); };
-    b.appendChild(img);
-    const lab = document.createElement("span");
-    lab.textContent = v.flag + " " + v.label + (v.live ? " \u25CF" : "");
-    b.appendChild(lab);
-    const pp = document.createElement("span");
-    pp.className = "params"; pp.textContent = v.params + " params";
-    b.appendChild(pp);
-    b.title = "synthesizes your text live";
-    b.onclick = () => {
-      voice = v; renderMascots(); updateUI();
-      if (DEFAULT_TEXT[v.key] !== undefined) $("text").value = DEFAULT_TEXT[v.key];
-      // Lazy-fetch this voice's blobs on select so the first click of
-      // "Synthesize" doesn't pay the network round-trip; synth() awaits the
-      // same cached promise if the prefetch hasn't resolved yet.
-      if (v.trellis) loadTrellisBundle().catch(e => log("prefetch trellis: " + (e && e.message || e)));
-      else if (v.nano) loadNanoBundle(v.key).catch(e => log("prefetch " + v.key + ": " + (e && e.message || e)));
-      else if (v.key !== "mcu") loadVoiceBundle(v.key).catch(e => log("prefetch " + v.key + ": " + (e && e.message || e)));
-    };
-    box.appendChild(b);
+    img.src = "assets/mascots/" + (head.group || head.key) + ".png";
+    img.alt = head.label;
+    img.loading = "lazy";   // only the first row is above the fold
+    img.onerror = () => { const d = document.createElement("div"); d.className = "emj";
+                          d.textContent = head.emj; img.replaceWith(d); };
+    art.appendChild(img);
+    const nm = document.createElement("span");
+    nm.className = "name";
+    nm.textContent = head.flag + " " + head.label;
+    art.appendChild(nm);
+    // Clicking the art keeps the size already chosen for this language.
+    art.onclick = () => selectVoice(sizes.indexOf(voice) >= 0 ? voice : head);
+    tile.appendChild(art);
+    const chips = document.createElement("div");
+    chips.className = "chips";
+    for (const v of sizes) {
+      const c = document.createElement("button");
+      c.className = "chip" + (v === voice ? " sel" : "");
+      c.textContent = v.params;
+      c.title = v.label + " \u2014 " + (v.exact ? v.exact.toLocaleString() + " parameters" : v.params + " params");
+      c.onclick = () => selectVoice(v);
+      chips.appendChild(c);
+    }
+    tile.appendChild(chips);
+    box.appendChild(tile);
   }
 }
 function updateUI() {
@@ -571,11 +773,19 @@ const VOICE_CACHE = "sanotts-voices-v1";
 function voiceHostOrder(){
   const pin = new URLSearchParams(location.search).get("voices");
   if(pin && VOICE_HOSTS[pin]) return [pin];          // ?voices=hf|gh|local
-  // Serving this directory locally is how the page is developed; reaching for
-  // a CDN first there would break an offline machine and slow every reload.
-  const dev = location.hostname === "localhost" || location.hostname === "127.0.0.1" ||
-              location.protocol === "file:";
-  return dev ? ["local","hf","gh"] : ["hf","gh","local"];
+  // Hugging Face first, everywhere, including a local checkout. The weights are
+  // distributed from HF; that is the path a visitor takes, so it is the path we
+  // develop and demo against. Serving them from the same origin during local
+  // work would make every timing here a fiction and hide exactly the slow
+  // download this status line exists to show.
+  //
+  // It is not free: cold from HF the 1.56M Spanish bundle is ~3-13 s against
+  // 29-42 ms same-origin. That cost is now visible in the status line and the
+  // log rather than silent, which is the point.
+  //
+  // ?voices=local pins the same-origin copy for offline work or a flaky link;
+  // ?voices=gh pins the GitHub raw mirror.
+  return ["hf","gh","local"];
 }
 
 async function voiceCache(){
@@ -605,39 +815,127 @@ async function voiceBytesOk(bytes, expect){
   return true;
 }
 
+// Where a voice is coming from, and how fast.
+//
+// This exists because "loading model... 10.85 s" is unreadable: it does not
+// say whether ten of those seconds were a Hugging Face round trip or ten
+// seconds of arithmetic, and the answer changes what you would do about it.
+// Measured cold, the 1.56M Spanish bundle takes 13.4 s from Hugging Face
+// (~130 KB/s) and 29-42 ms from this origin -- a 400x difference that the old
+// status line rendered as the same sentence.
+//
+// So: name the host in words, show the rate while it moves, and leave the
+// finished line in the log where it can still be read.
+function fmtBytes(n){
+  return n >= 1048576 ? (n / 1048576).toFixed(1) + " MB"
+       : n >= 1024    ? Math.round(n / 1024) + " KB"
+       : n + " B";
+}
+function fmtRate(bytesPerSec){
+  return bytesPerSec >= 1048576 ? (bytesPerSec / 1048576).toFixed(1) + " MB/s"
+                                : Math.round(bytesPerSec / 1024) + " KB/s";
+}
 // The two blobs of a voice download in parallel, so progress is aggregated
 // across them: one number that only goes up, rather than two interleaved ones
 // fighting over the same status line.
+// Selecting a voice prefetches its blobs, and that used to happen with no
+// progress callback at all -- so the download ran silently and by the time you
+// pressed the button there was nothing left to show. Both paths now report
+// through here.
+function voiceProgress(m, kind, frac){
+  const st = $("state"); if(st) st.textContent = m;
+  showDownload(frac, kind);
+  if(kind === "done") log(m);
+}
+
+function showDownload(frac, kind, label){
+  const go = $("go");
+  if(!go) return;
+  if(kind === "progress"){
+    const pct = Math.max(0, Math.min(1, typeof frac === "number" ? frac : 0)) * 100;
+    if(!go.dataset.restore) go.dataset.restore = go.textContent;
+    go.classList.add("dl");
+    go.style.setProperty("--p", pct.toFixed(1) + "%");
+    go.textContent = "Downloading\u2026 " + Math.floor(pct) + "%";
+    return;
+  }
+  if(kind === "done"){
+    // Fill it before it reverts, so a fast download reads as finished rather
+    // than as a bar that vanished part-way.
+    if(go.classList.contains("dl")) go.style.setProperty("--p", "100%");
+    setTimeout(() => {
+      go.classList.remove("dl");
+      go.style.removeProperty("--p");
+      if(go.dataset.restore){ go.textContent = go.dataset.restore; delete go.dataset.restore; }
+    }, 240);
+  }
+}
+
 function progressTracker(onProgress, label){
-  const totals = new Map(), have = new Map();
-  return function note(id, total, got){
+  const totals = new Map(), have = new Map(), hosts = new Set();
+  const t0 = performance.now();
+  let lastPaint = 0;
+  function note(id, total, got, hostLabel){
+    if(hostLabel) hosts.add(hostLabel);
     if(total) totals.set(id, total);
     have.set(id, got);
     if(!onProgress) return;
+    // Repainting on every 16 KB chunk is wasted work and an unreadable
+    // flicker; the finished frame always paints, whatever the clock says.
+    const now = performance.now();
+    const done = totals.size > 0 && [...totals.keys()].every(k => have.get(k) >= totals.get(k));
+    if(!done && now - lastPaint < 120) return;
+    lastPaint = now;
     let t = 0, g = 0;
     totals.forEach(v => t += v);
     have.forEach(v => g += v);
-    if(t) onProgress(label + " " + Math.floor(g * 100 / t) + "% of " +
-                     (t / 1048576).toFixed(1) + " MB");
+    if(!t) return;
+    const secs = (now - t0) / 1000;
+    // Below a quarter of a second the rate is measuring the clock, not the
+    // network, and "0.0 MB/s" on a 30 ms same-origin read is a lie about a
+    // fast path. Say where it came from and leave the speed out.
+    const where = hosts.size ? " from " + [...hosts].join(" + ") : "";
+    // Nothing has arrived yet on a slow host's first frame: g/secs is 0, and
+    // "0 KB/s" is exactly the meaningless number this display exists to avoid.
+    const rate = (g > 0 && secs >= 0.25) ? " \u00B7 " + fmtRate(g / secs) : "";
+    onProgress("downloading " + label + where + " \u2014 " + Math.floor(g * 100 / t) +
+               "% of " + fmtBytes(t) + rate, "progress", g / t);
+  }
+  // What actually happened, for the line that stays in the log.
+  note.summary = function(){
+    let g = 0;
+    have.forEach(v => g += v);
+    const secs = (performance.now() - t0) / 1000;
+    const where = hosts.size ? [...hosts].join(" + ") : "cache";
+    if(!g) return label + " was already in memory";             // nothing moved
+    const speed = secs >= 0.25 ? " at " + fmtRate(g / secs)
+                : hosts.has("cache") ? "" : " \u2014 instant";
+    return label + ": " + fmtBytes(g) + " from " + where + " in " +
+           (secs < 1 ? Math.round(secs * 1000) + " ms" : secs.toFixed(2) + " s") + speed;
   };
+  return note;
 }
 
-async function fetchStream(url, note, id){
+async function fetchStream(url, note, id, hostLabel){
   const r = await fetch(url);
   if(!r.ok) throw new Error(r.status + " " + (r.statusText || ""));
   const total = Number(r.headers.get("content-length")) || 0;
-  if(!r.body || !total){                       // no stream, no length: one shot
+  // No stream, or no Content-Length to divide by (Hugging Face omits it on
+  // some redirects): take it in one piece and report the size once it is
+  // known, so the caller still learns the host and the total.
+  if(!r.body || !total){
     const bytes = new Uint8Array(await r.arrayBuffer());
-    if(note) note(id, bytes.length, bytes.length);
+    if(note) note(id, bytes.length, bytes.length, hostLabel);
     return bytes;
   }
   const reader = r.body.getReader();
   const chunks = []; let got = 0;
+  if(note) note(id, total, 0, hostLabel);      // name the host before byte one
   for(;;){
     const {done, value} = await reader.read();
     if(done) break;
     chunks.push(value); got += value.length;
-    if(note) note(id, total, got);
+    if(note) note(id, total, got, hostLabel);
   }
   const out = new Uint8Array(got); let at = 0;
   for(const c of chunks){ out.set(c, at); at += c.length; }
@@ -654,7 +952,12 @@ async function fetchVoiceFile(path, opts){
     const hit = await cache.match(key);
     if(hit){
       const bytes = new Uint8Array(await hit.arrayBuffer());
-      if(await voiceBytesOk(bytes, opts.expect)) return bytes;
+      if(await voiceBytesOk(bytes, opts.expect)){
+        // Counts as a host so the finished line can say "from cache" rather
+        // than inventing a transfer rate for bytes that never left the disk.
+        if(opts.note) opts.note(path, bytes.length, bytes.length, "cache");
+        return bytes;
+      }
       await cache.delete(key);   // stale against meta.json, so fetch it again
     }
   }
@@ -662,7 +965,7 @@ async function fetchVoiceFile(path, opts){
   for(const name of voiceHostOrder()){
     const host = VOICE_HOSTS[name];
     try {
-      const bytes = await fetchStream(host.base + path, opts.note, path);
+      const bytes = await fetchStream(host.base + path, opts.note, path, host.label);
       if(!(await voiceBytesOk(bytes, opts.expect)))
         throw new Error("failed its size/sha256 check against meta.json");
       if(cache){ try { await cache.put(key, new Response(bytes)); } catch(e){} }
@@ -693,33 +996,81 @@ async function fetchVoiceJson(path){
 function loadTrellisBundle(onProgress){
   if(!trellisBundle){
     trellisBundle = (async () => {
-      const t0 = performance.now();
-      const bytes = await fetchVoiceFile("trellis/bundle.bin",
-        {note: progressTracker(onProgress, "downloading trellis voice")});
-      if(onProgress) onProgress("model loaded: " + (bytes.length/1048576).toFixed(1) +
-        " MB in " + ((performance.now()-t0)/1000).toFixed(2) + " s");
+      const note = progressTracker(onProgress, "trellis voice");
+      const bytes = await fetchVoiceFile("trellis/bundle.bin", {note});
+      if(onProgress) onProgress(note.summary(), "done");
       return bytes;
     })();
   }
   return trellisBundle;
 }
+// ---- float16 storage ----------------------------------------------------
+//
+// A blob is a meta.bin header followed by the weights, and the weights are
+// ~99.99% of it. snt_voice_wasm.c wants float32 and is not being changed, but
+// nothing says the DOWNLOAD has to be float32: a voice stored as float16 is
+// half the bytes, and widening it here hands the runtime exactly the f32 blob
+// it has always been handed.
+//
+// This is lossy, so it is only applied where float16 is the reference rather
+// than an approximation of it. meta.json opts in with "weights":"f16", and only
+// the languages added on 2026-09-08 do -- every CER/WER number those voices
+// have was measured on their fp16 package, so the fp16 weights are the ones
+// that were scored. Every voice released before that still ships f32 and takes
+// the untouched path below, byte for byte.
+//
+// 1.56M-parameter voice: 6.26 MB -> 3.13 MB.
+function widenF16(bytes, meta){
+  const head = Number(meta.meta_bytes), n = Number(meta.weight_floats);
+  if(!Number.isInteger(head) || !Number.isInteger(n) || head < 0 || n <= 0)
+    throw new Error("f16 blob: meta.json has no usable meta_bytes/weight_floats");
+  if(bytes.length !== head + 2 * n)
+    throw new Error("f16 blob is " + bytes.length + " bytes, meta.json implies " + (head + 2 * n));
+  const out = new Uint8Array(head + 4 * n);
+  out.set(bytes.subarray(0, head), 0);
+  const src = new DataView(bytes.buffer, bytes.byteOffset + head, 2 * n);
+  const dst = new DataView(out.buffer, head, 4 * n);
+  for(let i = 0; i < n; i++){
+    const b = src.getUint16(i * 2, true);
+    const exp = (b >> 10) & 0x1f, frac = b & 0x3ff, sign = (b & 0x8000) ? -1 : 1;
+    let v;
+    if(exp === 0)       v = sign * frac * 5.960464477539063e-8;   // subnormal
+    else if(exp === 31) v = frac ? NaN : sign * Infinity;
+    else                v = sign * Math.pow(2, exp - 25) * (1024 + frac);
+    dst.setFloat32(i * 4, v, true);
+  }
+  return out;
+}
+
 function loadVoiceBundle(key, onProgress){
   if(!voiceBundles.has(key)){
-    voiceBundles.set(key, (async () => {
-      const t0 = performance.now();
+    const pending = (async () => {
       const meta = await fetchVoiceJson(key + "/meta.json");
-      const note = progressTracker(onProgress, "downloading " + key + " voice");
-      const [front, dec] = await Promise.all([
-        fetchVoiceFile(key + "/front_f32.bin",
+      const note = progressTracker(onProgress, key + " voice");
+      const f16 = meta.weights === "f16";
+      let [front, dec] = await Promise.all([
+        fetchVoiceFile(key + "/" + (meta.front || "front_f32.bin"),
           {note, expect:{bytes:meta.front_bytes, sha256:meta.front_sha256}}),
-        fetchVoiceFile(key + "/dec_f32.bin",
+        fetchVoiceFile(key + "/" + (meta.dec || "dec_f32.bin"),
           {note, expect:{bytes:meta.dec_bytes, sha256:meta.dec_sha256}}),
       ]);
-      const mb = ((front.length + dec.length) / 1048576).toFixed(1);
-      if(onProgress) onProgress("model loaded: " + mb + " MB in " +
-        ((performance.now() - t0) / 1000).toFixed(2) + " s");
+      const summary = note.summary();
+      let widened = "";
+      if(f16){
+        const w0 = performance.now();
+        front = widenF16(front, meta.front_dims);
+        dec   = widenF16(dec,   meta.dec_dims);
+        widened = ", float16 widened in " + Math.round(performance.now() - w0) + " ms";
+      }
+      if(onProgress) onProgress(summary + widened, "done");
       return {meta, front, dec};
-    })());
+    })();
+    // Memoise the SUCCESS, never the failure. Caching a rejected promise means
+    // one flaky fetch bricks that voice for the life of the page: every later
+    // click replays the original error and no retry is possible without a
+    // reload. Dropping it on rejection makes the next click try again.
+    pending.catch(() => { if(voiceBundles.get(key) === pending) voiceBundles.delete(key); });
+    voiceBundles.set(key, pending);
   }
   return voiceBundles.get(key);
 }
@@ -730,18 +1081,15 @@ function loadVoiceBundle(key, onProgress){
 function loadNanoBundle(key, onProgress){
   if(!nanoBundles.has(key)){
     nanoBundles.set(key, (async () => {
-      const t0 = performance.now();
       const meta = await fetchVoiceJson(key + "/meta.json");
-      const note = progressTracker(onProgress, "downloading " + key + " voice");
+      const note = progressTracker(onProgress, key + " voice");
       const [front, dec] = await Promise.all([
         fetchVoiceFile(key + "/" + meta.front,
           {note, expect:{bytes:meta.front_bytes, sha256:meta.front_sha256}}),
         fetchVoiceFile(key + "/" + meta.dec,
           {note, expect:{bytes:meta.dec_bytes, sha256:meta.dec_sha256}}),
       ]);
-      const mb = ((front.length + dec.length) / 1048576).toFixed(1);
-      if(onProgress) onProgress("model loaded: " + mb + " MB in " +
-        ((performance.now() - t0) / 1000).toFixed(2) + " s");
+      if(onProgress) onProgress(note.summary(), "done");
       return {meta, front, dec};
     })());
   }
@@ -877,9 +1225,73 @@ async function synthMcu(text){
   if(n<0) throw new Error("synth returned "+n);
   return {pcm, ids, wall, sr:SR};
 }
+// ---- two languages that need work before the phonemizer -----------------
+//
+// Both are lazy: the module and its data are fetched the first time that
+// voice is actually synthesized, never on page load, so an English visitor
+// pays nothing for either. Both promises are cached, so the cost is paid
+// once per page.
+//
+// RUSSIAN. espeak's ru_dict is 8.2 MB and 99.5% of it is an 811k-entry stress
+// lexicon; Russian stress is lexical, so dropping it changes 1 phoneme id in
+// 12 and trimming it by frequency is barely better -- and those ids are the
+// contract ru_RU-irina-medium was distilled on. Any single sentence, though,
+// touches only a handful of entries. So the lexicon source ships in 2048
+// shards, ru_lexicon.js fetches the few a sentence needs and espeak's own
+// compiler (already linked into snt_g2p.wasm) builds a dictionary inside the
+// module's filesystem. 1886/1886 FLORES sentences come out with ids identical
+// to the full dictionary -- see experiments/evidence/ru-lexicon-sharding-20260908.json.
+//
+// Selecting "ru" before any dictionary exists is fine: espeak logs "Can't read
+// dictionary file" and carries on, which is what makes compile-on-demand
+// possible. But phonemizing before the first prepare() returns GARBAGE rather
+// than an error, so prepare() has to run for EVERY text, after setG2PVoice and
+// before g2pIds. That ordering is the whole contract; do not reorder it.
+let ruLexiconPromise = null;
+function ruLexicon(){
+  if(!ruLexiconPromise){
+    ruLexiconPromise = (async () => {
+      const mod = await import("./ru_lexicon.js?v=20260909");
+      const ru = new mod.RuLexicon({baseUrl:"g2p-lazy/ru"});
+      await ru.init(G2P);          // manifest + rules/list/emoji + base tier
+      return ru;
+    })().catch(e => { ruLexiconPromise = null; throw e; });
+  }
+  return ruLexiconPromise;
+}
+// ARABIC. Arabic script omits the short vowels espeak needs, so piper runs a
+// 1.16M-parameter diacritizer over the text first (piper/voice.py:223, on by
+// default). Without it the browser hands ar_JO-kareem-medium a phoneme stream
+// it was never distilled on: 44.55% of the ids match piper, 0 sentences out of
+// 1977. web/tashkeel/ is a hand-written port of that model -- no ONNX runtime
+// -- gated at 852,668/852,668 ids and 1977/1977 sentences identical to piper's
+// own output (experiments/evidence/ar-tashkeel-port-20260908.json). It costs
+// 2.4 MB, which is why it is behind this promise and not in the page load.
+let tashkeelPromise = null;
+function tashkeel(){
+  if(!tashkeelPromise){
+    tashkeelPromise = (async () => {
+      const mod = await import("./tashkeel/tashkeel.mjs?v=20260909");
+      // fetch is passed explicitly rather than left to the default parameter:
+      // a bare `fetch` reference detached from window throws "Illegal
+      // invocation" in some engines.
+      return await mod.loadTashkeel("tashkeel/", (u, o) => fetch(u, o));
+    })().catch(e => { tashkeelPromise = null; throw e; });
+  }
+  return tashkeelPromise;
+}
+
 async function synthVoice(key, text){
   const bundle = await loadVoiceBundle(key);
+  if(bundle.meta.espeak_voice === "ar"){
+    const diacritizer = await tashkeel();
+    text = diacritizer.diacritize(text);
+  }
   setG2PVoice(bundle.meta.espeak_voice, bundle.meta.g2p_voice_slot);
+  if(bundle.meta.espeak_voice === "ru"){
+    const ru = await ruLexicon();
+    await ru.prepare(G2P, text);   // must run for every text, after set_voice
+  }
   const ids = g2pIds(text);
   const frontP=toHeap(Voice,bundle.front), decP=toHeap(Voice,bundle.dec);
   const idsP=toHeap(Voice,new Uint8Array(ids.buffer,0,ids.length*4));
@@ -937,10 +1349,14 @@ async function synth(){
     setState("preparing\u2026"); await uiBreath();
 
     // model download/load feedback (cached bundles resolve instantly)
+    // Progress frames go to the status line only; the "done" line -- host,
+    // bytes, time, rate -- also goes to the log, where it survives the next
+    // status update and can still be read after the audio has played.
+    const onLoad = voiceProgress;
     if (voice.key === "mcu") { setState("loading model\u2026"); await uiBreath(); await loadMcuAssets(); }
-    else if (voice.trellis) await loadTrellisBundle(m => { setState(m); log(m); });
-    else if (voice.nano) await loadNanoBundle(voice.key, m => { setState(m); log(m); });
-    else await loadVoiceBundle(voice.key, m => { setState(m); log(m); });
+    else if (voice.trellis) await loadTrellisBundle(onLoad);
+    else if (voice.nano) await loadNanoBundle(voice.key, onLoad);
+    else await loadVoiceBundle(voice.key, onLoad);
     await uiBreath();
 
     const chunks = splitChunks(text);
@@ -956,7 +1372,7 @@ async function synth(){
       if (!player){                       // first audio: start playing NOW
         player = makeStreamPlayer(r.sr);
         ttfu = (performance.now() - tStart) / 1000;
-        $("time").textContent = ttfu.toFixed(2) + " s to first audio";
+        $("time").textContent = ttfu.toFixed(2) + " s to first audio (incl. download)";
         log("first audio after " + ttfu.toFixed(2) + " s");
       }
       player.push(r.pcm);
@@ -970,16 +1386,85 @@ async function synth(){
     const secs = total/lastSr, rtf = totalWall/secs;
     $("phon").textContent = totalIds + " ids (espeak-ng wasm)";
     $("dur").textContent = secs.toFixed(2) + " s @ " + (lastSr/1000).toFixed(2) + " kHz";
-    $("time").textContent = ttfu.toFixed(2) + " s to first audio \u00B7 " + totalWall.toFixed(2) + " s total";
+    $("time").textContent = ttfu.toFixed(2) + " s to first audio (incl. download) \u00B7 "
+                         + totalWall.toFixed(2) + " s compute";
     $("rtf").textContent = rtf<1 ? (1/rtf).toFixed(1)+"\u00D7 faster than real time" : rtf.toFixed(2)+"\u00D7 real time";
     setState("done \u2014 " + chunks.length + (chunks.length>1?" sentences":" sentence") + ".");
     $("play").disabled = false;
   }catch(e){ $("state").innerHTML='<span class="badge err">error</span>'; log(String(e&&e.message||e)); }
   finally{ $("go").disabled=false; }
 }
+// ---- the "Sample" column ------------------------------------------------
+//
+// Each button synthesizes that voice's own sentence through exactly the
+// machinery the picker uses -- same bundles, same phonemizer, same decoder.
+// Nothing here is a pre-rendered clip, which is the honest version: what you
+// hear is what this page produces on your machine today, including the
+// download it needed to get there, reported in the row.
+//
+// One at a time. These calls block the main thread inside wasm, so two
+// overlapping presses would interleave into nonsense and stall the page.
+let samplePlaying = null;
+async function playSample(btn){
+  const key = btn.dataset.voice;
+  const v = VOICES.find(x => x.key === key);
+  const noteEl = btn.parentElement.querySelector(".sampnote");
+  if(!v){ if(noteEl) noteEl.textContent = "no voice " + key; return; }
+  if(samplePlaying) return;
+  samplePlaying = key;
+  const label = btn.innerHTML;
+  btn.classList.add("on");
+  const buttons = [...document.querySelectorAll("button.samp")];
+  buttons.forEach(b => { b.disabled = true; });
+  const say = m => { if(noteEl) noteEl.textContent = m; };
+  try{
+    const text = DEFAULT_TEXT[v.key] !== undefined ? DEFAULT_TEXT[v.key] : DEFAULT_TEXT[v.group];
+    if(text === undefined) throw new Error("no sample sentence for " + key);
+    btn.innerHTML = "\u25A0 " + label.replace(/^[^ ]+ /, "");
+    const onLoad = (m, kind) => say(kind === "done" ? m : m);
+    if(v.trellis) await loadTrellisBundle(onLoad);
+    else if(v.nano) await loadNanoBundle(v.key, onLoad);
+    else await loadVoiceBundle(v.key, onLoad);
+    const loaded = noteEl ? noteEl.textContent : "";
+    const doChunk = t => v.trellis ? synthTrellis(t)
+                       : v.nano ? synthNano(v.key, t) : synthVoice(v.key, t);
+    const t0 = performance.now();
+    let player = null, secs = 0;
+    const chunks = splitChunks(text);
+    for(let i = 0; i < chunks.length; i++){
+      say((loaded ? loaded + " \u00B7 " : "") + "synthesizing " + (i + 1) + "/" + chunks.length);
+      await uiBreath();                       // let the status paint before wasm blocks
+      const r = await doChunk(chunks[i]);
+      if(!player) player = makeStreamPlayer(r.sr);
+      player.push(r.pcm);
+      secs += r.pcm.length / r.sr;
+    }
+    const wall = (performance.now() - t0) / 1000;
+    say((loaded ? loaded + " \u00B7 " : "") + secs.toFixed(1) + " s of audio in " +
+        wall.toFixed(2) + " s");
+  }catch(e){
+    say("failed: " + ((e && e.message) || e));
+  }finally{
+    btn.innerHTML = label;
+    btn.classList.remove("on");
+    buttons.forEach(b => { b.disabled = false; });
+    samplePlaying = null;
+  }
+}
+for(const b of document.querySelectorAll("button.samp")) b.addEventListener("click", () => playSample(b));
+
 let lastSr = SR;
 renderMascots(); updateUI();
-Promise.all([SaanoTTS(), SaanoG2P(), SaanoVoice(), SaanoTrellis(), SaanoNanoHeart(), SaanoNanoHeartNano()]).then(([m,g,v,t,nh,nn])=>{
+// espeak-ng writes its dictionary-compile progress to stderr, which Emscripten
+// maps to console.error. Compiling the Russian lexicon per utterance is the
+// normal path, so a working page printed about a dozen red lines every time --
+// including "Can't read dictionary file: '/espeak/ru_dict'", which is expected
+// (the dictionary does not exist until we compile one) and reads exactly like
+// a failure to anyone who opens devtools. Route only those known lines to
+// console.debug; anything unrecognised still goes to console.error.
+const G2P_CHATTER = /^(?:Can't read dictionary file|Using phonemetable|Compiling: )|^\s*\d+ entries\s*$|^\s*\d+ rules, \d+ groups|^\s*$/;
+Promise.all([SaanoTTS(), SaanoG2P({ printErr: t => (G2P_CHATTER.test(t) ? console.debug : console.error)("g2p: " + t) }),
+             SaanoVoice(), SaanoTrellis(), SaanoNanoHeart(), SaanoNanoHeartNano()]).then(([m,g,v,t,nh,nn])=>{
   Mod=m; G2P=g; Voice=v; Trellis=t; NANO_MODULES.heart=nh; NANO_MODULES.heartnano=nn;
   const rc=G2P._snt_g2p_init ? G2P._snt_g2p_init() : 0;
   $("state").textContent="ready.";
