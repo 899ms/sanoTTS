@@ -155,6 +155,25 @@
       "model_md5": "40cdb7930ff91b81574d5f0489e076ea",
       "config_md5": "1fda3ec1d0d3a5a74064397ea8fe0af0",
       "role": "primary Chinese teacher"
+    },
+    "es_MX_ald_medium": {
+      "status": "downloaded",
+      "language": "Spanish",
+      "language_code": "es_MX",
+      "voice_key": "es_MX-ald-medium",
+      "quality": "medium",
+      "num_speakers": 1,
+      "phoneme_type": "espeak",
+      "espeak_voice": "es-419",
+      "sample_rate": 22050,
+      "phoneme_id_count": 154,
+      "model_path": "${PIPER_VOICES}/es/es_MX/ald/medium/es_MX-ald-medium.onnx",
+      "config_path": "${PIPER_VOICES}/es/es_MX/ald/medium/es_MX-ald-medium.onnx.json",
+      "model_relpath": "es/es_MX/ald/medium/es_MX-ald-medium.onnx",
+      "config_relpath": "es/es_MX/ald/medium/es_MX-ald-medium.onnx.json",
+      "model_size_bytes": 63201294,
+      "config_size_bytes": 4878,
+      "role": "Mexican Spanish teacher (es_MX); espeak voice es-419 (Latin American phonemes). Use with mexican_g2p_normalizer.py for toponym/number corrections."
     }
   }
 }
