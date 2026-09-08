@@ -89,9 +89,6 @@ FULL_LOGICAL_OUTPUTS = (
 )
 
 
-
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=Path, default=DEFAULT_MODEL)
@@ -608,6 +605,10 @@ def build_pack(args: argparse.Namespace) -> dict[str, Any]:
     debug_model = make_debug_model(args.model, debug_outputs)
     session = ort.InferenceSession(debug_model.SerializeToString(), providers=["CPUExecutionProvider"])
     voice = PiperVoice.load(args.model, args.config)
+    # es_MX toponym/number rewrites are applied only when the teacher's own
+    # config says es-419; every other language must pass through untouched.
+    espeak_voice = str((json.loads(args.config.read_text(encoding="utf-8"))
+                        .get("espeak") or {}).get("voice") or "")
     sample_rate = int(voice.config.sample_rate)
     scales = [float(args.noise_scale), float(args.length_scale), float(args.noise_w)]
 
@@ -632,7 +633,7 @@ def build_pack(args: argparse.Namespace) -> dict[str, Any]:
         for index, row in enumerate(rows, start=1):
             row_id = safe_row_id(index, int(row["_line_no"]))
             raw_text = str(row.get("target_text") or row.get("text") or "").strip()
-            text = normalize_mexican_g2p(raw_text)
+            text = normalize_mexican_g2p(raw_text, espeak_voice)
             sentence_phonemes = voice.phonemize(text)
             if not sentence_phonemes:
                 raise RuntimeError(f"{row_id}: Piper produced no sentence phonemes")

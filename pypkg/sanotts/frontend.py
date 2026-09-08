@@ -44,6 +44,8 @@ from typing import Any
 
 import numpy as np
 
+from .mexican_g2p import normalize_mexican_g2p
+
 logger = logging.getLogger("sanotts.frontend")
 
 # Framing ids fixed by the Piper phoneme_id_map convention; every voice's
@@ -327,6 +329,8 @@ def text_to_phoneme_ids(text: str, table: PhonemeTable) -> np.ndarray:
     clean_text = text.strip()
     if not clean_text:
         raise FrontendError("text is empty")
+    # Gated on the voice: a no-op for everything except espeak's es-419.
+    clean_text = normalize_mexican_g2p(clean_text, table.espeak_voice)
     phonemized = _ENGINE.phonemize(clean_text, table.espeak_voice)
     phonemes = list(unicodedata.normalize("NFD", phonemized))
     ids = phonemes_to_ids(phonemes, table)
