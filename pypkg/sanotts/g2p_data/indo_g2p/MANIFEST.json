@@ -1,0 +1,44 @@
+{
+ "files": {
+  "collocations": {
+   "from": "src/data/collocations.ts::COLLOCATIONS",
+   "lines": 4,
+   "raw_bytes": 247,
+   "raw_sha256": "fa5829023d8ce0b840048ceaa369bef3f980120f7cfd57bf3c6df4bc17e15ae7",
+   "xz_bytes": 248
+  },
+  "lexicon": {
+   "from": "src/data/lexicon.ts::LEXICON",
+   "lines": 22659,
+   "raw_bytes": 245223,
+   "raw_sha256": "0e945c2df0db7bef0678801cb1a198edf9f1f90704c1065006d7f9c6ddab9389",
+   "xz_bytes": 53560
+  },
+  "schwa_dict": {
+   "from": "src/data/schwa-dict.ts::SCHWA_DICT",
+   "lines": 17888,
+   "raw_bytes": 192885,
+   "raw_sha256": "d1123d106f4ec3346a7eb7c0f9a53bbb62b138e8bd10ab48351fd2e3a761668e",
+   "xz_bytes": 50240
+  },
+  "schwa_overrides": {
+   "from": "src/data/schwa-overrides.ts::SCHWA_OVERRIDES",
+   "lines": 12,
+   "raw_bytes": 105,
+   "raw_sha256": "7e0d4e9b766fa7c73e9fb7101a9bb6333ff48185e2b054dd235db436aa43a880",
+   "xz_bytes": 140
+  },
+  "syllabifier_state": {
+   "from": "src/data/syllabifier-model.ts::STATE_FEATURES",
+   "lines": 11890,
+   "raw_bytes": 273376,
+   "raw_sha256": "a1da3c070424e7e1a825596999fe3bf204dadc6aa30133b93e1a0c7fc0d309ae",
+   "xz_bytes": 84824
+  }
+ },
+ "generated_by": "tools/vendor_indo_g2p.py",
+ "license": "MIT",
+ "upstream": "https://github.com/snowfluke/indo-g2p",
+ "upstream_revision": "dd5f102cba7345ba46adef8c2ad9fa261587ea4e",
+ "upstream_version": "0.1.2"
+}

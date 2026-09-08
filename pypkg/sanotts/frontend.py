@@ -262,7 +262,28 @@ class EspeakEngine:
         # which accent espeak uses), not a phoneme-table substitution.
         candidates = [espeak_voice]
         if "-" not in espeak_voice:
+            # Ask espeak what it actually has rather than guessing suffixes.
+            # The old list was ["-us", "-gb"], which is only ever right for
+            # English: espeak has no fr-us, so a French voice whose config says
+            # "fr" failed outright even though fr-fr was sitting right there.
+            # Prefer the doubled form (fr-fr, es-es, pt-pt) when espeak offers
+            # it, since that is the home region of the language, then any other
+            # regional variant in a stable order.
+            try:
+                supported = set(EspeakBackend.supported_languages())
+            except Exception:  # noqa: BLE001 - discovery is best-effort
+                supported = set()
+            regional = sorted(v for v in supported if v.startswith(f"{espeak_voice}-"))
+            preferred = f"{espeak_voice}-{espeak_voice}"
+            if preferred in regional:
+                regional.remove(preferred)
+                regional.insert(0, preferred)
+            candidates += regional
+            # Keep the historical English guesses last, for a build whose
+            # supported_languages() we could not read.
             candidates += [f"{espeak_voice}-us", f"{espeak_voice}-gb"]
+        seen: set[str] = set()
+        candidates = [c for c in candidates if not (c in seen or seen.add(c))]
 
         last_error: Exception | None = None
         for candidate in candidates:
