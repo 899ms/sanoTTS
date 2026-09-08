@@ -1,0 +1,19 @@
+{
+  "domain": "sanotts",
+  "name": "sanoTTS",
+  "codeowners": [
+    "@Ampixa"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/Ampixa/sanoTTS/blob/master/custom_components/sanotts/README.md",
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/Ampixa/sanoTTS/issues",
+  "loggers": [
+    "sanotts"
+  ],
+  "requirements": [
+    "sanotts==0.5.0"
+  ],
+  "version": "0.5.0"
+}

@@ -1,3 +1,10 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 Ampixa
+ *
+ * The sanoTTS inference runtime is MIT; see LICENSE.MIT for the exact file
+ * list and why the split is sound. The repository as a whole is GPL-3.0,
+ * because the grapheme-to-phoneme layer embeds espeak-ng. This file does not.
+ */
 /* snt_port_wasm.c -- WebAssembly (Emscripten) port + browser entry point.
  *
  * The core is platform-free C99; the browser is just another Tier-S target

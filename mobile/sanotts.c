@@ -1,3 +1,10 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 Ampixa
+ *
+ * The sanoTTS inference runtime is MIT; see LICENSE.MIT for the exact file
+ * list and why the split is sound. The repository as a whole is GPL-3.0,
+ * because the grapheme-to-phoneme layer embeds espeak-ng. This file does not.
+ */
 /* sanotts.c -- implementation of the binding-friendly API. See sanotts.h. */
 #include "sanotts.h"
 

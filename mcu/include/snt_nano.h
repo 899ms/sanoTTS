@@ -1,3 +1,10 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 Ampixa
+ *
+ * The sanoTTS inference runtime is MIT; see LICENSE.MIT for the exact file
+ * list and why the split is sound. The repository as a whole is GPL-3.0,
+ * because the grapheme-to-phoneme layer embeds espeak-ng. This file does not.
+ */
 /* snt_nano.h -- public API of the E12-nano runtime.
  *
  * Same shape as snt_tts.h (the R7 line): the caller hands the library two

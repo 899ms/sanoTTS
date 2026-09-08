@@ -1,3 +1,10 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 Ampixa
+ *
+ * The sanoTTS inference runtime is MIT; see LICENSE.MIT for the exact file
+ * list and why the split is sound. The repository as a whole is GPL-3.0,
+ * because the grapheme-to-phoneme layer embeds espeak-ng. This file does not.
+ */
 /* sanotts_jni.c -- JNI shims for mobile/kotlin/SanoTTS.kt.
  *
  * Deliberately thin: every one of these maps to exactly one call in
@@ -10,9 +17,21 @@
 
 #include "sanotts.h"
 
-#define NS Java_com_ampixa_sanotts_SanoTTS_00024Companion
+/* JNI names are <package>_<Class>_<method> with '$' escaped as _00024, so a
+ * companion object's methods live under ..._SanoTTS_00024Companion_.
+ *
+ * The concatenation has to go through two levels of macro. Writing
+ * `#define NS Java_..._00024Companion` and then `NS_nativeOpen` does NOT
+ * work: `NS_nativeOpen` is one token, so the preprocessor never sees `NS`
+ * and the function is exported literally as "NS_nativeOpen". That builds
+ * cleanly and then fails at runtime with UnsatisfiedLinkError -- verified by
+ * inspecting the built .so, which is the only place the mistake is visible.
+ */
+#define JNI_CAT(a, b) a##b
+#define JNI_PASTE(a, b) JNI_CAT(a, b)
+#define NS(name) JNI_PASTE(Java_com_ampixa_sanotts_SanoTTS_00024Companion_, name)
 
-JNIEXPORT jlong JNICALL NS_nativeOpen(JNIEnv *env, jobject self,
+JNIEXPORT jlong JNICALL NS(nativeOpen)(JNIEnv *env, jobject self,
                                       jstring front, jstring dec) {
     (void)self;
     const char *f = (*env)->GetStringUTFChars(env, front, NULL);
@@ -23,29 +42,29 @@ JNIEXPORT jlong JNICALL NS_nativeOpen(JNIEnv *env, jobject self,
     return (jlong)(intptr_t)t;
 }
 
-JNIEXPORT void JNICALL NS_nativeClose(JNIEnv *env, jobject self, jlong h) {
+JNIEXPORT void JNICALL NS(nativeClose)(JNIEnv *env, jobject self, jlong h) {
     (void)env; (void)self;
     sanotts_close((sanotts *)(intptr_t)h);
 }
 
-JNIEXPORT jstring JNICALL NS_nativeLastError(JNIEnv *env, jobject self, jlong h) {
+JNIEXPORT jstring JNICALL NS(nativeLastError)(JNIEnv *env, jobject self, jlong h) {
     (void)self;
     return (*env)->NewStringUTF(env, sanotts_last_error((sanotts *)(intptr_t)h));
 }
 
-JNIEXPORT jint JNICALL NS_nativeSampleRate(JNIEnv *env, jobject self, jlong h) {
+JNIEXPORT jint JNICALL NS(nativeSampleRate)(JNIEnv *env, jobject self, jlong h) {
     (void)env; (void)self;
     return (jint)sanotts_sample_rate((sanotts *)(intptr_t)h);
 }
 
-JNIEXPORT void JNICALL NS_nativeSetSeed(JNIEnv *env, jobject self, jlong h, jlong seed) {
+JNIEXPORT void JNICALL NS(nativeSetSeed)(JNIEnv *env, jobject self, jlong h, jlong seed) {
     (void)env; (void)self;
     sanotts_set_seed((sanotts *)(intptr_t)h, (uint64_t)seed);
 }
 
 /* Returns null on failure; Kotlin then reads nativeLastError. Returning null
  * rather than throwing keeps the error text in one place. */
-JNIEXPORT jfloatArray JNICALL NS_nativeSpeak(JNIEnv *env, jobject self,
+JNIEXPORT jfloatArray JNICALL NS(nativeSpeak)(JNIEnv *env, jobject self,
                                              jlong h, jintArray ids) {
     (void)self;
     sanotts *t = (sanotts *)(intptr_t)h;

@@ -1,3 +1,10 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 Ampixa
+ *
+ * The sanoTTS inference runtime is MIT; see LICENSE.MIT for the exact file
+ * list and why the split is sound. The repository as a whole is GPL-3.0,
+ * because the grapheme-to-phoneme layer embeds espeak-ng. This file does not.
+ */
 /* snt_tts.c -- saanotts-mcu core: the full TTS pipeline in platform-free
  * C99. All platform speed lives behind snt_port.h. Extracted from the
  * ESP32-S3 lab harness (esp32c3/fsd/fsd_e2e.c) after the optimization

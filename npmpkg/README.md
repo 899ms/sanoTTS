@@ -3,10 +3,22 @@
 Browser-native neural text-to-speech — WebAssembly, no server, no API key.
 This package wraps the same runtime that powers the live demo at
 [ampixa.github.io/sanoTTS](https://ampixa.github.io/sanoTTS): an espeak-ng
-phonemizer compiled to wasm, feeding a tiny (0.75M–1.8M parameter)
-duration/acoustic/decoder stack, also compiled to wasm.
+phonemizer compiled to wasm, feeding a tiny duration/acoustic/decoder stack,
+also compiled to wasm.
 
-Zero runtime dependencies. `dist/` ships the wasm runtime (~2.5 MB); voice
+Two model families ship, and `synthesize()` picks the right runtime from the
+voice's own `meta.json` — nothing to configure:
+
+| Voice | Params | Rate | Runtime |
+|---|---:|---:|---|
+| `heartnano` | 294,279 | 24 kHz | `snt_nano` |
+| `heart` | 2,272,145 | 24 kHz | `snt_nano` |
+| `amy`, `kristin`, `hfc`, … | 0.75M–1.8M | 22.05 kHz | piperlite |
+
+Measured in headless Chromium on an M-series Mac, `heartnano` renders 4.2 s of
+speech in **51 ms** — roughly 80× faster than real time.
+
+Zero runtime dependencies. `dist/` ships the wasm runtime (~2.7 MB); voice
 weights are fetched lazily at runtime (see [Voices](#voices) below).
 
 ## Install
@@ -26,7 +38,7 @@ import { SanoTTS, playAudio } from 'sanotts-web';
 
 const tts = await SanoTTS.load();               // defaults to the hosted demo's assets
 const result = await tts.synthesize('Hello! I am a tiny voice living in your browser.', {
-  voice: 'amy',
+  voice: 'heartnano',   // 294k parameters, 24 kHz
 });
 
 console.log(result.samples.length, result.sampleRate); // Float32Array, 22050
@@ -52,8 +64,9 @@ playAudio(result);
   self-host the wasm runtime (see below).
 - **`tts.synthesize(text, { voice, voiceBase, lengthScale, maxSeconds })`** —
   phonemizes `text` and renders audio with the given voice. `voiceBase`
-  defaults to the hosted demo; `lengthScale` overrides the voice's default
-  speaking rate; `maxSeconds` caps the output buffer (default 20s).
+  defaults to Hugging Face (see [Voices](#voices)); `lengthScale` overrides
+  the voice's default speaking rate; `maxSeconds` caps the output buffer
+  (default 20s).
 - **`tts.loadVoice(key, { voiceBase })`** — fetch + cache a voice's weight
   bundle ahead of time (e.g. while the user is still choosing a voice), so
   the first `synthesize()` call for that voice doesn't pay the network
@@ -87,12 +100,22 @@ scope). It will throw if `document` is unavailable (e.g. under plain Node).
 | `hindi` | Hindi | `hi` | 1.50M params |
 | `chinese` | Mandarin | `cmn` | 1.50M params |
 
-Each voice is `meta.json` (params, ~1KB) + `front_f32.bin` (duration +
-acoustic, ~1.6–3.4 MB) + `dec_f32.bin` (decoder, ~2.5–4 MB) — 4–7 MB per
-voice in fp32. These are **not** bundled in this package; they are fetched
-from `voiceBase` (default: the hosted demo) the first time a voice is used,
-then cached in memory for the life of the page. An int8-quantized voice
-format (roughly 4x smaller) is planned but not yet shipped.
+Each voice is `meta.json` (params, ~1KB) + `front_*.bin` (duration +
+acoustic) + `dec_*.bin` or `model_*.bin` (decoder) — 4–7 MB per fp32 voice,
+8.7 MB for `heart`, and 337 KB for the int8 `heartnano`.
+
+These are **not** bundled in this package. They are fetched the first time a
+voice is used, then cached in memory for the life of the page. `voiceBase`
+defaults to
+[huggingface.co/ampixa/sanoTTS](https://huggingface.co/ampixa/sanoTTS), which
+is built to serve model weights and sends the CORS headers a browser needs;
+if it cannot be reached, the package falls back to the Pages host. Passing
+`voiceBase` yourself turns that fallback off, so a self-hosted deployment
+never quietly reaches back to our servers.
+
+The wasm modules are a separate question and still come from `assetBase`.
+They are injected as `<script>` tags, which is fussy about MIME types, so
+they stay on the Pages host unless you self-host them.
 
 ## Deploy on your own site
 

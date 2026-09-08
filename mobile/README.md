@@ -118,10 +118,25 @@ AudioTrack.Builder()
 tts.close()
 ```
 
-*Not verified: no Android NDK on the machine this was written on. The CMake
-target does configure and build a shared library for the host, so the source
-set and include paths are right, but nobody has built it for an Android ABI.
-If you do, please open an issue either way.*
+*Built and symbol-checked, not run on a device.* With NDK 28.2.13676358 and
+SDK cmake 3.22.1:
+
+| ABI | `libsanotts.so` |
+|---|---:|
+| arm64-v8a | 207,000 B |
+| armeabi-v7a | 142,428 B |
+| x86_64 | 192,472 B |
+
+`llvm-nm` on the arm64 build shows the six JNI entry points under
+`Java_com_ampixa_sanotts_SanoTTS_00024Companion_*` plus the eleven public
+`sanotts_*` symbols. That check earned its keep: the first build exported
+them as `NS_nativeOpen`, because `#define NS Java_...` followed by
+`NS_nativeOpen` never expands -- `NS_nativeOpen` is a single preprocessor
+token. It compiled cleanly and would have failed at runtime with
+UnsatisfiedLinkError.
+
+Still unverified: the Kotlin side has not been compiled (no kotlinc
+available), and nothing has run on an Android device.
 
 ## Flutter
 
@@ -137,7 +152,11 @@ tts.close();
 `dart/sanotts.dart` imports nothing from Flutter, so it also runs in plain
 Dart and in tests. It needs `package:ffi`.
 
-*Not verified: no Flutter toolchain on the machine this was written on.*
+*Verified on Linux with Dart 3.11 and Flutter 3.41.1:* the binding loads the
+CMake-built shared library and synthesizes 64,512 samples (2.69 s) at
+rms 0.04568 from the shipped fixture -- the same numbers the C API produces on
+macOS, so the FFI marshalling is not distorting anything. Not yet run inside a
+Flutter app on a phone.
 
 ## Which weights
 

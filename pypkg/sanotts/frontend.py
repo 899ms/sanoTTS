@@ -32,8 +32,11 @@ of trusting ``os.path.exists`` alone.
 
 from __future__ import annotations
 
+import atexit
 import glob
 import logging
+import shutil
+import tempfile
 import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
@@ -121,6 +124,51 @@ def load_phoneme_table(piper_config_path: Path) -> PhonemeTable:
     return PhonemeTable(espeak_voice=str(espeak_voice), id_map=id_map)
 
 
+_COMPAT_DIR: Path | None = None
+
+
+def _espeak_compat_data_dir(data_path: str | None) -> str | None:
+    """A data directory espeak-ng will accept however it resolves the path.
+
+    espeakng-loader ships working data, and espeak still refuses it: handed
+    the data directory it falls back to the path compiled into the wheel --
+    which points at the CI machine that built it
+    (/Users/runner/work/espeakng-loader/...) -- and handed the parent it looks
+    for `<parent>/phontab`, one level above where phontab actually is. Either
+    way espeak prints "Error processing file ... phontab" and calls exit(),
+    so the probe loop below cannot catch it: the process simply dies. That is
+    why text input failed on an otherwise correct install.
+
+    Rather than guess which reading a given espeak build uses, this makes both
+    true at once. A directory of symlinks where `<dir>/phontab` and every
+    other data file resolve, and `<dir>/espeak-ng-data` also resolves to the
+    real directory, satisfies whichever one espeak applies. Symlinks, so it
+    costs a few hundred inodes and no copied bytes.
+    """
+    global _COMPAT_DIR
+    if _COMPAT_DIR is not None:
+        return str(_COMPAT_DIR)
+    if not data_path:
+        return None
+    source = Path(data_path)
+    if not source.is_dir() or not (source / "phontab").is_file():
+        return None
+    try:
+        compat = Path(tempfile.mkdtemp(prefix="sanotts-espeak-")) / "espeak-ng-data"
+        compat.mkdir(parents=True)
+        for entry in source.iterdir():
+            (compat / entry.name).symlink_to(entry)
+        nested = compat / "espeak-ng-data"
+        if not nested.exists():
+            nested.symlink_to(source.resolve())
+    except OSError as exc:  # a read-only or symlink-hostile filesystem
+        logger.debug("could not build the espeak compat data dir: %s", exc)
+        return None
+    atexit.register(shutil.rmtree, compat.parent, True)
+    _COMPAT_DIR = compat
+    return str(compat)
+
+
 class EspeakEngine:
     """Lazily-initialized espeak-ng backend, shared across voices.
 
@@ -153,7 +201,10 @@ class EspeakEngine:
             ) from exc
 
         library_path = espeakng_loader.get_library_path()
-        data_candidates = [espeakng_loader.get_data_path()]
+        data_candidates = [
+            _espeak_compat_data_dir(espeakng_loader.get_data_path()),
+            espeakng_loader.get_data_path(),
+        ]
         for pattern in _DATA_PATH_CANDIDATES:
             data_candidates.extend(sorted(glob.glob(pattern)))
 

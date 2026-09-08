@@ -4,13 +4,22 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sanotts"
-version = "0.1.0"
-description = "Self-contained, numpy-only inference runtime for saanoTTS voice packages."
-readme = { text = "sanotts: pip-installable inference for saanoTTS raw-fp16 voice packages (duration + acoustic + piperlite decoder, numpy-only). Voices are downloaded on demand or loaded from a local directory produced by tools/export_roota_self_contained_package.py.", content-type = "text/plain" }
-license = { text = "GPL-3.0-or-later" }
+version = "0.5.0"
+description = "Self-contained, numpy-only inference runtime for sanoTTS voices, including the 294k and 2.27M heart voices."
+readme = { text = "sanotts: pip-installable, numpy-only inference for sanoTTS voices. Two graphs are supported: the piperlite voices (amy, kristin, hfc, vi, id) and the nano voices (heart at 2.27M parameters, heart-nano at 294k), the latter running mel-100 -> ConvNeXt1D -> iSTFT with a noise-fed decoder. Both are gated against the same PyTorch references the C runtime is held to. Voices download on demand or load from a local directory.", content-type = "text/plain" }
+license = { text = "MIT" }
 requires-python = ">=3.10"
+# numpy is the only runtime dependency, which is the point of this package.
+# phonemizer-fork and espeakng-loader used to be here for grapheme-to-phoneme;
+# both are GPL-3.0 and they were the sole reason this package could not be MIT.
+# Every voice now has an espeak-free front end, so they are an opt-in extra for
+# anyone who specifically wants the old espeak path back.
 dependencies = [
   "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+espeak = [
   "phonemizer-fork>=3.3,<4",
   "espeakng-loader>=0.2,<1",
 ]
@@ -18,14 +27,35 @@ dependencies = [
 [project.scripts]
 sanotts = "sanotts.cli:main"
 
-# This directory is not (yet) committed to the parent repo's git tree, so we
-# cannot rely on hatchling's default VCS-tracked-files file selection --
-# without this, `sanotts/tables/*.json` (untracked) would silently be
-# dropped from the wheel. Explicit include instead.
+# Explicit include rather than hatchling's VCS-tracked-files default: the
+# tables/*.json registry is data, and a selection rule that silently drops it
+# produces a wheel that imports fine and then cannot resolve a single voice.
+# g2p_data/ is the same story for the espeak-free nano front end: the two misaki
+# dictionaries and the .npz fallback model are the front end, and its NOTICE.md
+# carries the Apache-2.0 attribution that redistributing them requires.
 [tool.hatch.build]
 include = [
   "sanotts/**/*.py",
   "sanotts/tables/*.json",
+  "sanotts/g2p_data/*.json",
+  "sanotts/g2p_data/*.npz",
+  "sanotts/g2p_data/NOTICE.md",
+  "sanotts/g2p_data/LICENSE.misaki.txt",
+  # The MIT indo-g2p tables behind the selectable Indonesian path. Already
+  # xz-compressed, so the wheel stores them as they are: 189 KB for the five
+  # that ship. NOTICE.md carries their attribution and MANIFEST.json the
+  # sha256 of every payload.
+  "sanotts/g2p_data/indo_g2p/*.xz",
+  "sanotts/g2p_data/indo_g2p/MANIFEST.json",
+]
+# `include` alone is not enough for the out-of-vocabulary model: hatchling
+# honours .gitignore when selecting files, the repo ignores *.npz for training
+# artifacts, and the result is a wheel that imports fine and then fails every
+# English voice with "fallback model not found". `artifacts` is the documented
+# escape hatch for exactly that -- files that must ship even though the VCS
+# ignores them.
+artifacts = [
+  "sanotts/g2p_data/*.npz",
 ]
 
 [tool.hatch.build.targets.wheel]

@@ -1,12 +1,60 @@
 {
   "_comment": "Alias -> release package name for VOICE_RELEASE_BASE_URL/<package>.tar.gz downloads. Package names match the directories under releases/multivoice-20260713 in the saanoTTS research repo, which is what tools/export_roota_self_contained_package.py produces per voice.",
   "voices": {
-    "amy": { "package": "amy-en-1p46m", "language": "en_US", "sample_rate": 22050 },
-    "amy-1p1m": { "package": "amy-en-1p1m", "language": "en_US", "sample_rate": 22050 },
-    "amy-1p8m": { "package": "amy-en-1p8m", "language": "en_US", "sample_rate": 22050 },
-    "hfc": { "package": "hfc-en-1p8m", "language": "en_US", "sample_rate": 22050 },
-    "kristin": { "package": "kristin-en-1p4m", "language": "en_US", "sample_rate": 22050 },
-    "vi": { "package": "vi-vais1000-1p46m", "language": "vi_VN", "sample_rate": 22050 },
-    "id": { "package": "id-newstts-1p46m", "language": "id_ID", "sample_rate": 22050 }
-  }
+    "amy": {
+      "package": "amy-en-1p46m",
+      "language": "en_US",
+      "sample_rate": 22050
+    },
+    "amy-1p1m": {
+      "package": "amy-en-1p1m",
+      "language": "en_US",
+      "sample_rate": 22050
+    },
+    "amy-1p8m": {
+      "package": "amy-en-1p8m",
+      "language": "en_US",
+      "sample_rate": 22050
+    },
+    "hfc": {
+      "package": "hfc-en-1p8m",
+      "language": "en_US",
+      "sample_rate": 22050
+    },
+    "kristin": {
+      "package": "kristin-en-1p4m",
+      "language": "en_US",
+      "sample_rate": 22050
+    },
+    "vi": {
+      "package": "vi-vais1000-1p46m",
+      "language": "vi_VN",
+      "sample_rate": 22050
+    },
+    "id": {
+      "package": "id-newstts-1p46m",
+      "language": "id_ID",
+      "sample_rate": 22050
+    },
+    "heart-nano": {
+      "package": "heartnano",
+      "language": "en_US",
+      "sample_rate": 24000,
+      "runtime": "nano",
+      "release": "voices-v2",
+      "parameters": 294279,
+      "archive": "heartnano-e13b"
+    },
+    "heart": {
+      "package": "heart",
+      "language": "en_US",
+      "sample_rate": 24000,
+      "runtime": "nano",
+      "release": "voices-v2",
+      "parameters": 2272145,
+      "weights": "f32",
+      "archive": "heart-r227f32"
+    }
+  },
+  "_comment_nano": "Voices with \"runtime\": \"nano\" come from the voices-v2 release and run through sanotts.nano, not sanotts.models: a different graph (mel-100 -> ConvNeXt1D -> iSTFT, noise-fed decoder) that models.py rejects. Their packages carry front_q8.bin/model_q8.bin/meta.json rather than the roota.raw-fp16.v1 manifest."
 }
