@@ -31,6 +31,7 @@ import numpy as np
 import onnxruntime as ort
 import torch
 from scipy.signal import butter, sosfiltfilt
+from mexican_g2p_normalizer import normalize_mexican_g2p
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -166,6 +167,10 @@ def split_text_for_phonemizer(text: str, mode: str) -> list[str]:
             raise ValueError("text is empty")
         return [stripped]
     return chunks
+
+
+# The normalizer itself lives in sanotts.mexican_g2p; see the note there
+# on why the espeak-voice gate is required.
 
 
 def require_file(path: Path, label: str) -> None:
@@ -417,6 +422,9 @@ class DashboardState:
         )
         self.piper_session = ort.InferenceSession(debug_model.SerializeToString(), providers=["CPUExecutionProvider"])
         self.voice = pack_mod.PiperVoice.load(args.piper_model, args.piper_config)
+        # Kept so the es_MX normalizer can be gated on this voice's own language;
+        # PiperVoice does not expose the raw espeak block.
+        self.piper_config_json = json.loads(Path(args.piper_config).read_text(encoding="utf-8"))
         self.sample_rate = int(self.voice.config.sample_rate)
         self.scales = [float(args.noise_scale), float(args.length_scale), float(args.noise_w)]
         sentence_silence = float(getattr(args, "sentence_silence", 0.0))
@@ -575,6 +583,8 @@ class DashboardState:
         started = time.time()
         render_id = f"{int(started)}-{uuid.uuid4().hex[:8]}"
         text_chunking = str(getattr(self.args, "text_chunking", "none"))
+        clean_text = normalize_mexican_g2p(
+            clean_text, str((self.piper_config_json.get("espeak") or {}).get("voice") or ""))
         text_chunks = split_text_for_phonemizer(clean_text, text_chunking)
         phoneme_chunks: list[tuple[str, list[Any]]] = []
         for text_chunk in text_chunks:

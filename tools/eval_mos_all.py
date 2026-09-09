@@ -49,7 +49,7 @@ def ok_wavs(d: Path):
 
 def run_sqdns(d: Path):
     """SCOREQ + DNSMOS (coexist fine)."""
-    from diagnose_roota_sourcefilter_codebook import load_scoreq_class
+    from scoreq_loader import load_scoreq_class
     from speechmos import dnsmos
     scoreq = load_scoreq_class()(data_domain="synthetic", mode="nr", use_onnx=True)
     sq, ov, sg = [], [], []

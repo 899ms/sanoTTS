@@ -1,0 +1,26 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "sanoTTS",
+        "description": "Pick a voice. Named voices download once (2-3 MB) into the Home Assistant cache; after that, synthesis is entirely offline. To stay offline from the start, leave the voice list alone and point the optional directory at an unpacked voice package.",
+        "data": {
+          "voice": "Voice",
+          "voice_dir": "Local voice directory (optional)"
+        },
+        "data_description": {
+          "voice_dir": "Absolute path to an unpacked voice package containing manifest.json. When set, nothing is downloaded and this directory is used instead of the selected voice."
+        }
+      }
+    },
+    "error": {
+      "cannot_download": "Could not download the voice. Check that Home Assistant has internet access, or point the integration at a local voice directory instead.",
+      "cannot_load_voice": "Could not load that voice. Check the Home Assistant log for details.",
+      "package_missing": "The sanotts package is not installed. Restart Home Assistant so it can install the integration's requirements.",
+      "voice_dir_not_found": "That directory does not exist on the Home Assistant host."
+    },
+    "abort": {
+      "already_configured": "[%key:common::config_flow::abort::already_configured_service%]"
+    }
+  }
+}

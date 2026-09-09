@@ -35,6 +35,12 @@ GREEN = "#278B59"
 TEAL = "#147C79"
 SILVER = "#C9C8C3"
 SILVER_DARK = "#888985"
+GREY = "#8E9296"
+GREY_DARK = "#5E6367"
+SKY = "#3E8FD0"
+GOLD = "#E9A72C"
+GREEN_DARK = "#186B44"
+PINK = "#E39A9A"
 
 
 def rect(d, box, color, outline=None):
@@ -121,6 +127,86 @@ def nepal_flag(d, x, y):
     px(d, x + 2, y + 2, WHITE)
     px(d, x + 2, y + 6, WHITE)
     px(d, x + 3, y + 6, WHITE)
+
+
+def hband_badge(d, x, y, top, mid, bot):
+    """6x5 outlined badge, three horizontal bands (Germany, Spain, Russia)."""
+    rect(d, (x, y, x + 5, y + 4), OUTLINE)
+    rect(d, (x + 1, y + 1, x + 4, y + 1), top)
+    rect(d, (x + 1, y + 2, x + 4, y + 2), mid)
+    rect(d, (x + 1, y + 3, x + 4, y + 3), bot)
+
+
+def vband_badge(d, x, y, left, mid, right):
+    """6x5 outlined badge, three vertical bands (France, Italy, Romania).
+    The inner field is 4 px wide, so the centre band takes two of them."""
+    rect(d, (x, y, x + 5, y + 4), OUTLINE)
+    rect(d, (x + 1, y + 1, x + 1, y + 3), left)
+    rect(d, (x + 2, y + 1, x + 3, y + 3), mid)
+    rect(d, (x + 4, y + 1, x + 4, y + 3), right)
+
+
+def brazil_badge(d, x, y):
+    """Green field, yellow lozenge, blue disc."""
+    rect(d, (x, y, x + 5, y + 4), OUTLINE)
+    rect(d, (x + 1, y + 1, x + 4, y + 3), GREEN)
+    px(d, x + 2, y + 1, YELLOW)
+    px(d, x + 3, y + 1, YELLOW)
+    rect(d, (x + 1, y + 2, x + 4, y + 2), YELLOW)
+    px(d, x + 2, y + 3, YELLOW)
+    px(d, x + 3, y + 3, YELLOW)
+    rect(d, (x + 2, y + 2, x + 3, y + 2), BLUE)
+
+
+def czech_badge(d, x, y):
+    """White over red with the blue hoist wedge."""
+    rect(d, (x, y, x + 5, y + 4), OUTLINE)
+    rect(d, (x + 1, y + 1, x + 4, y + 2), WHITE)
+    rect(d, (x + 1, y + 3, x + 4, y + 3), RED)
+    poly(d, [(x + 1, y + 1), (x + 2, y + 2), (x + 1, y + 3)], BLUE)
+
+
+def turkey_badge(d, x, y):
+    """Red field with a white crescent and star, at four pixels of headroom."""
+    rect(d, (x, y, x + 5, y + 4), OUTLINE)
+    rect(d, (x + 1, y + 1, x + 4, y + 3), CRIMSON)
+    px(d, x + 2, y + 1, WHITE)
+    px(d, x + 1, y + 2, WHITE)
+    px(d, x + 2, y + 3, WHITE)
+    px(d, x + 4, y + 2, WHITE)
+
+
+def jordan_badge(d, x, y):
+    """Black/white/green bands with the red hoist triangle."""
+    rect(d, (x, y, x + 5, y + 4), OUTLINE)
+    rect(d, (x + 1, y + 1, x + 4, y + 1), OUTLINE)
+    rect(d, (x + 1, y + 2, x + 4, y + 2), WHITE)
+    rect(d, (x + 1, y + 3, x + 4, y + 3), GREEN)
+    poly(d, [(x + 1, y + 1), (x + 2, y + 2), (x + 1, y + 3)], CRIMSON)
+
+
+def german_badge(d, x, y):
+    hband_badge(d, x, y, OUTLINE, RED, YELLOW)
+
+
+def spain_badge(d, x, y):
+    hband_badge(d, x, y, RED, YELLOW, RED)
+
+
+def russia_badge(d, x, y):
+    hband_badge(d, x, y, WHITE, BLUE, RED)
+
+
+def france_badge(d, x, y):
+    vband_badge(d, x, y, BLUE, WHITE, RED)
+
+
+def italy_badge(d, x, y):
+    vband_badge(d, x, y, GREEN, WHITE, RED)
+
+
+def romania_badge(d, x, y):
+    vband_badge(d, x, y, BLUE, YELLOW, RED)
 
 
 def amy():
@@ -472,6 +558,257 @@ def heartnano():
     return im
 
 
+# --- the ten languages added on 2026-09-08 ---------------------------------
+# Same rules as the set above: a 32 px animal on a transparent layer, one
+# national badge, the shared outline/face helpers, nothing anti-aliased.
+
+
+def german():
+    """Stag -- antlers give it a silhouette nothing else in the set has."""
+    im, d = common_canvas()
+    floor_shadow(d, 6, 26)
+    # Antlers first, so the head paints over their roots.
+    for sx, dirn in ((12, -1), (20, 1)):
+        d.line([(sx, 9), (sx + 2 * dirn, 5), (sx + 3 * dirn, 2)], fill=BROWN_DARK, width=1)
+        d.line([(sx + 2 * dirn, 5), (sx + 5 * dirn, 4)], fill=BROWN_DARK, width=1)
+        d.line([(sx + 1 * dirn, 7), (sx + 4 * dirn, 6)], fill=BROWN_DARK, width=1)
+    ellipse(d, (9, 15, 24, 28), BROWN, OUTLINE)
+    poly(d, [(12, 8), (20, 8), (22, 13), (20, 19), (12, 19), (10, 13)], TAN, OUTLINE)
+    # Muzzle, ears, dappled flank.
+    ellipse(d, (13, 15, 20, 20), CREAM, OUTLINE)
+    poly(d, [(10, 10), (6, 8), (9, 13)], TAN, OUTLINE)
+    poly(d, [(22, 10), (26, 8), (23, 13)], TAN, OUTLINE)
+    px(d, 15, 17, OUTLINE)
+    px(d, 18, 17, OUTLINE)
+    face(d, [(12, 11), (19, 11)])
+    for dx, dy in ((11, 19), (15, 21), (19, 19), (13, 24), (18, 24)):
+        px(d, dx, dy, CREAM)
+    rect(d, (11, 27, 13, 28), BROWN_DARK)
+    rect(d, (20, 27, 22, 28), BROWN_DARK)
+    german_badge(d, 20, 21)
+    return im
+
+
+def french():
+    """Gallic rooster: comb, wattle, and a fan of tail feathers."""
+    im, d = common_canvas()
+    floor_shadow(d, 7, 25)
+    poly(d, [(9, 18), (3, 12), (2, 18), (5, 22), (10, 23)], NAVY, OUTLINE)
+    poly(d, [(9, 17), (4, 14), (4, 19), (10, 21)], BLUE)
+    ellipse(d, (8, 12, 23, 27), WHITE, OUTLINE)
+    poly(d, [(11, 15), (17, 14), (19, 20), (13, 23)], SILVER)
+    ellipse(d, (15, 4, 25, 15), WHITE, OUTLINE)
+    # Comb, beak, wattle.
+    for cx in (17, 19, 21):
+        rect(d, (cx, 2, cx + 1, 4), CRIMSON)
+    rect(d, (17, 4, 22, 5), CRIMSON)
+    poly(d, [(25, 8), (29, 10), (25, 11)], YELLOW, OUTLINE)
+    rect(d, (23, 12, 24, 14), CRIMSON)
+    face(d, [(21, 8)])
+    rect(d, (12, 27, 14, 28), YELLOW)
+    rect(d, (18, 27, 20, 28), YELLOW)
+    france_badge(d, 12, 19)
+    return im
+
+
+def spanish():
+    """Fighting bull -- black, low-slung, with the horns doing the reading."""
+    im, d = common_canvas()
+    floor_shadow(d, 3, 26)
+    # Body and legs.
+    ellipse(d, (3, 15, 20, 26), "#2E2A28", OUTLINE)
+    rect(d, (5, 23, 7, 28), "#2E2A28", outline=OUTLINE)
+    rect(d, (10, 24, 12, 28), "#221F1D", outline=OUTLINE)
+    rect(d, (15, 23, 17, 28), "#2E2A28", outline=OUTLINE)
+    poly(d, [(6, 15), (11, 11), (16, 14)], "#3B3634")     # shoulder hump
+    d.line([(3, 17), (1, 22), (2, 26)], fill="#2E2A28", width=1)
+    px(d, 2, 27, "#3B3634")
+    # Head, dropped low the way a bull carries it.
+    poly(d, [(16, 13), (23, 11), (28, 14), (29, 20), (25, 24), (19, 22), (16, 18)],
+         "#2E2A28", OUTLINE)
+    # Horns: two thick cream sweeps, well clear of the skull.
+    poly(d, [(17, 12), (14, 6), (12, 4), (14, 4), (17, 8), (20, 11)], CREAM, OUTLINE)
+    poly(d, [(26, 12), (29, 6), (31, 5), (31, 7), (29, 9), (28, 12)], CREAM, OUTLINE)
+    # Muzzle, nostrils, eye, ear.
+    ellipse(d, (22, 18, 29, 24), "#4A4340", OUTLINE)
+    px(d, 25, 20, PINK)
+    px(d, 27, 20, PINK)
+    poly(d, [(16, 14), (12, 15), (16, 18)], "#221F1D", OUTLINE)
+    px(d, 21, 15, WHITE)
+    px(d, 21, 16, OUTLINE)
+    spain_badge(d, 7, 18)
+    return im
+
+
+def italian():
+    """Grey wolf, upright and alert -- the Capitoline she-wolf's descendant."""
+    im, d = common_canvas()
+    floor_shadow(d, 5, 26)
+    poly(d, [(10, 20), (4, 19), (2, 24), (7, 27), (12, 25)], GREY_DARK, OUTLINE)
+    ellipse(d, (9, 14, 24, 28), GREY, OUTLINE)
+    poly(d, [(11, 16), (17, 15), (21, 19), (17, 26), (12, 24)], SILVER)
+    poly(d, [(10, 9), (9, 2), (15, 7)], GREY, OUTLINE)
+    poly(d, [(20, 7), (26, 2), (25, 9)], GREY, OUTLINE)
+    poly(d, [(11, 8), (11, 4), (14, 8)], GREY_DARK)
+    poly(d, [(21, 8), (24, 4), (24, 8)], GREY_DARK)
+    poly(d, [(10, 8), (17, 5), (25, 8), (24, 16), (17, 20), (10, 16)], GREY, OUTLINE)
+    # Long muzzle, the wolf tell.
+    poly(d, [(14, 14), (20, 14), (21, 20), (17, 22), (13, 20)], SILVER, OUTLINE)
+    rect(d, (16, 18, 18, 19), OUTLINE)
+    d.line([(15, 21), (17, 20), (19, 21)], fill=OUTLINE, width=1)
+    face(d, [(13, 11), (20, 11)])
+    italy_badge(d, 20, 21)
+    return im
+
+
+def portuguese():
+    """Blue-and-gold macaw, wings folded, long tail."""
+    im, d = common_canvas()
+    floor_shadow(d, 8, 24)
+    poly(d, [(13, 22), (9, 29), (12, 30), (17, 24)], SKY, OUTLINE)
+    poly(d, [(14, 23), (11, 28), (16, 25)], BLUE)
+    ellipse(d, (9, 11, 23, 27), SKY, OUTLINE)
+    poly(d, [(12, 16), (18, 15), (20, 24), (14, 26)], YELLOW)
+    poly(d, [(9, 13), (14, 12), (17, 20), (11, 23)], BLUE, OUTLINE)
+    ellipse(d, (12, 4, 24, 16), SKY, OUTLINE)
+    # Pale cheek patch, hooked bill.
+    ellipse(d, (17, 8, 23, 14), CREAM)
+    d.line([(19, 10), (22, 10)], fill=SILVER_DARK, width=1)
+    poly(d, [(23, 8), (28, 10), (27, 14), (23, 13)], OUTLINE)
+    poly(d, [(23, 9), (26, 11), (23, 12)], "#4A4340")
+    face(d, [(19, 9)])
+    rect(d, (13, 27, 15, 28), SILVER_DARK)
+    rect(d, (18, 27, 20, 28), SILVER_DARK)
+    brazil_badge(d, 10, 19)
+    return im
+
+
+def russian():
+    """Brown bear: round, heavy, small ears."""
+    im, d = common_canvas()
+    floor_shadow(d, 5, 27)
+    ellipse(d, (6, 13, 26, 28), BROWN, OUTLINE)
+    ellipse(d, (11, 18, 21, 27), TAN)
+    ellipse(d, (8, 4, 14, 11), BROWN, OUTLINE)
+    ellipse(d, (18, 4, 24, 11), BROWN, OUTLINE)
+    ellipse(d, (9, 5, 13, 10), BROWN_DARK)
+    ellipse(d, (19, 5, 23, 10), BROWN_DARK)
+    ellipse(d, (8, 5, 24, 20), BROWN, OUTLINE)
+    ellipse(d, (12, 12, 20, 19), TAN, OUTLINE)
+    rect(d, (15, 14, 17, 15), OUTLINE)
+    d.line([(14, 17), (16, 18), (18, 17)], fill=OUTLINE, width=1)
+    face(d, [(11, 10), (20, 10)])
+    rect(d, (9, 26, 12, 28), BROWN_DARK)
+    rect(d, (20, 26, 23, 28), BROWN_DARK)
+    russia_badge(d, 20, 21)
+    return im
+
+
+def czech():
+    """Hedgehog -- a spine field no other mascot has."""
+    im, d = common_canvas()
+    floor_shadow(d, 5, 27)
+    poly(d, [(4, 24), (7, 13), (14, 9), (22, 11), (27, 19), (27, 25), (4, 25)],
+         BROWN_DARK, OUTLINE)
+    # Spines: alternating short strokes over the dome.
+    for i, (sx, sy) in enumerate(((7, 17), (9, 13), (12, 11), (15, 10), (18, 11),
+                                  (21, 13), (24, 16), (25, 20), (6, 21))):
+        d.line([(sx, sy), (sx - 2 + (i % 3), sy - 3)], fill=INK, width=1)
+    for sx, sy in ((10, 18), (14, 15), (18, 15), (22, 19), (12, 22), (19, 22)):
+        px(d, sx, sy, INK)
+    # Pale face pokes out at the front-left.
+    poly(d, [(4, 18), (10, 16), (12, 22), (7, 26), (3, 24)], TAN, OUTLINE)
+    poly(d, [(3, 21), (7, 20), (7, 24), (3, 24)], CREAM)
+    px(d, 3, 22, OUTLINE)
+    px(d, 4, 22, OUTLINE)
+    face(d, [(7, 20)])
+    rect(d, (8, 26, 10, 28), BROWN_DARK)
+    rect(d, (18, 26, 20, 28), BROWN_DARK)
+    czech_badge(d, 19, 20)
+    return im
+
+
+def romanian():
+    """Sheep -- the Miori\u021ba ewe: a cloud of fleece on dark legs."""
+    im, d = common_canvas()
+    floor_shadow(d, 6, 26)
+    for cx, cy, r in ((11, 16, 5), (16, 14, 6), (21, 16, 5),
+                      (12, 21, 5), (19, 21, 5), (16, 19, 6)):
+        ellipse(d, (cx - r, cy - r, cx + r, cy + r), WHITE, OUTLINE)
+    for cx, cy, r in ((11, 16, 4), (16, 14, 5), (21, 16, 4),
+                      (12, 21, 4), (19, 21, 4), (16, 19, 5)):
+        ellipse(d, (cx - r, cy - r, cx + r, cy + r), WHITE)
+    for sx, sy in ((12, 17), (19, 17), (15, 21), (22, 20), (10, 21)):
+        px(d, sx, sy, SHADOW)
+    # Dark face and ears at the right.
+    poly(d, [(21, 12), (27, 11), (28, 18), (23, 20), (20, 17)], INK, OUTLINE)
+    poly(d, [(21, 12), (18, 10), (22, 15)], INK, OUTLINE)
+    poly(d, [(27, 11), (30, 12), (27, 16)], INK, OUTLINE)
+    px(d, 23, 14, WHITE)
+    px(d, 26, 14, WHITE)
+    rect(d, (25, 17, 27, 18), "#3B3634")
+    rect(d, (11, 25, 12, 28), INK)
+    rect(d, (18, 25, 19, 28), INK)
+    romania_badge(d, 8, 22)
+    return im
+
+
+def turkish():
+    """Van cat: white, one dark ear and a dark ringed tail."""
+    im, d = common_canvas()
+    floor_shadow(d, 6, 26)
+    poly(d, [(22, 22), (27, 18), (29, 12), (27, 11), (25, 17), (21, 20)],
+         "#C7623A", OUTLINE)
+    for ty in (12, 14, 16):
+        px(d, 27, ty, BROWN_DARK)
+    ellipse(d, (8, 14, 24, 28), WHITE, OUTLINE)
+    ellipse(d, (10, 17, 21, 27), WHITE)
+    poly(d, [(9, 10), (8, 3), (15, 8)], WHITE, OUTLINE)
+    poly(d, [(19, 8), (25, 3), (25, 10)], "#C7623A", OUTLINE)
+    poly(d, [(10, 9), (10, 5), (13, 9)], PINK)
+    poly(d, [(21, 9), (24, 5), (24, 9)], PINK)
+    ellipse(d, (8, 6, 25, 20), WHITE, OUTLINE)
+    ellipse(d, (13, 13, 20, 19), WHITE)
+    px(d, 16, 15, PINK)
+    px(d, 17, 15, PINK)
+    d.line([(15, 17), (16, 18), (17, 17)], fill=SILVER_DARK, width=1)
+    # The Van cat's odd eyes: one blue, one amber.
+    rect(d, (12, 11, 13, 12), BLUE)
+    rect(d, (20, 11, 21, 12), GOLD)
+    px(d, 12, 11, WHITE)
+    px(d, 20, 11, WHITE)
+    for wx in (6, 5):
+        px(d, wx, 15, SILVER_DARK)
+        px(d, wx, 17, SILVER_DARK)
+    turkey_badge(d, 15, 21)
+    return im
+
+
+def arabic():
+    """Dromedary camel: one hump, long neck, sand palette."""
+    im, d = common_canvas()
+    floor_shadow(d, 4, 27)
+    ellipse(d, (5, 16, 22, 26), TAN, OUTLINE)
+    poly(d, [(8, 18), (12, 11), (17, 11), (21, 18)], TAN, OUTLINE)
+    poly(d, [(9, 17), (13, 12), (17, 12), (20, 17)], "#D9A472")
+    rect(d, (7, 24, 9, 28), TAN, outline=OUTLINE)
+    rect(d, (12, 24, 14, 28), "#B9834F", outline=OUTLINE)
+    rect(d, (17, 24, 19, 28), TAN, outline=OUTLINE)
+    # Neck and small head.
+    poly(d, [(19, 20), (21, 11), (25, 8), (27, 9), (24, 13), (23, 21)],
+         TAN, OUTLINE)
+    poly(d, [(24, 6), (29, 7), (30, 11), (26, 12), (23, 10)], TAN, OUTLINE)
+    poly(d, [(24, 5), (26, 3), (26, 6)], "#B9834F", OUTLINE)
+    px(d, 29, 9, OUTLINE)
+    px(d, 29, 10, OUTLINE)
+    d.line([(26, 11), (29, 11)], fill=BROWN_DARK, width=1)
+    face(d, [(25, 8)])
+    d.line([(5, 19), (2, 23)], fill=TAN, width=1)
+    px(d, 2, 24, BROWN_DARK)
+    jordan_badge(d, 9, 19)
+    return im
+
+
 def render(sprite, filename, description):
     # Scale only once, with no antialiasing, to retain the 32 px grid.
     sprite = sprite.resize((SIZE, SIZE), Image.Resampling.NEAREST)
@@ -505,6 +842,16 @@ def main():
         "trellis.png": (trellis, "Trellis — spider on a woven web with United States flag pin"),
         "heart.png": (heart, "Heart — crimson heart with a face and United States flag pin"),
         "heartnano.png": (heartnano, "Heart-nano — tiny crimson heart over a waveform, United States flag pin"),
+        "german.png": (german, "German — stag with Germany flag badge"),
+        "french.png": (french, "French — Gallic rooster with France flag badge"),
+        "spanish.png": (spanish, "Spanish — black bull with Spain flag badge"),
+        "italian.png": (italian, "Italian — grey wolf with Italy flag badge"),
+        "portuguese.png": (portuguese, "Portuguese — blue-and-gold macaw with Brazil flag badge"),
+        "russian.png": (russian, "Russian — brown bear with Russia flag badge"),
+        "czech.png": (czech, "Czech — hedgehog with Czech Republic flag badge"),
+        "romanian.png": (romanian, "Romanian — fleecy ewe with Romania flag badge"),
+        "turkish.png": (turkish, "Turkish — odd-eyed Van cat with Turkey flag badge"),
+        "arabic.png": (arabic, "Arabic — dromedary camel with Jordan flag badge"),
     }
     for filename, (builder, description) in mascots.items():
         render(builder(), filename, description)

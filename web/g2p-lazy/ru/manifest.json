@@ -1,0 +1,17 @@
+{
+  "shards": 2048,
+  "hash": "fnv1a-32-mod-shards",
+  "shard_path": "shard/{id:04x}.txt",
+  "absent_marker": "##ABSENT",
+  "base_top_n": 50000,
+  "base_entries": 18462,
+  "base_absent": 31538,
+  "listx_headwords": 811314,
+  "src_files": [
+    "ru_rules",
+    "ru_list",
+    "ru_emoji"
+  ],
+  "espeak_ng_version": "1.52.0",
+  "note": "Shard ids are fnv1a32(word utf-8) % shards. web/ru_lexicon.js must use the identical function or the ids drift."
+}

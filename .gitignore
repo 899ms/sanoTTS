@@ -16,6 +16,11 @@ artifacts/
 *.safetensors
 *.bin
 *.npz
+# ...but the out-of-vocabulary G2P model is a shipped asset, not a scratch
+# artifact. hatchling honours this file when selecting what goes into the
+# wheel, so a blanket *.npz silently drops it and every English voice fails
+# on a clean install with "fallback model not found".
+!pypkg/sanotts/g2p_data/oov_bart_en_us.npz
 *.npy
 *.wav
 *.mp3
@@ -98,3 +103,8 @@ scratchpad/**/test_u600_acoustic
 scratchpad/**/test_u600_decoder
 scratchpad/**/test_u600_whole
 scratchpad/**/test_u600_pipe
+
+# Browser assets that must ship: the Arabic diacritizer weights and the
+# Russian lexicon shards are served as static files, and the blanket
+# *.bin above silently swallows the first one (the page then 404s).
+!web/tashkeel/*.bin

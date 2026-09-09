@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import statistics
 import sys
 import wave
@@ -27,6 +28,7 @@ import onnx
 import onnxruntime as ort
 from onnx import TensorProto, helper
 from piper.voice import PiperVoice
+from mexican_g2p_normalizer import normalize_mexican_g2p
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -603,6 +605,10 @@ def build_pack(args: argparse.Namespace) -> dict[str, Any]:
     debug_model = make_debug_model(args.model, debug_outputs)
     session = ort.InferenceSession(debug_model.SerializeToString(), providers=["CPUExecutionProvider"])
     voice = PiperVoice.load(args.model, args.config)
+    # es_MX toponym/number rewrites are applied only when the teacher's own
+    # config says es-419; every other language must pass through untouched.
+    espeak_voice = str((json.loads(args.config.read_text(encoding="utf-8"))
+                        .get("espeak") or {}).get("voice") or "")
     sample_rate = int(voice.config.sample_rate)
     scales = [float(args.noise_scale), float(args.length_scale), float(args.noise_w)]
 
@@ -626,7 +632,8 @@ def build_pack(args: argparse.Namespace) -> dict[str, Any]:
     with manifest_path.open("w", encoding="utf-8") as out:
         for index, row in enumerate(rows, start=1):
             row_id = safe_row_id(index, int(row["_line_no"]))
-            text = str(row.get("target_text") or row.get("text") or "").strip()
+            raw_text = str(row.get("target_text") or row.get("text") or "").strip()
+            text = normalize_mexican_g2p(raw_text, espeak_voice)
             sentence_phonemes = voice.phonemize(text)
             if not sentence_phonemes:
                 raise RuntimeError(f"{row_id}: Piper produced no sentence phonemes")

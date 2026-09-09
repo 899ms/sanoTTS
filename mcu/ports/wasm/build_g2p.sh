@@ -58,9 +58,31 @@ for f in "${UCD_SRCS[@]}"; do srcs+=("$ucd/$f"); done
 # -I espeak/include       espeak-ng/*.h public headers
 # -I espeak/ucd-tools/include   ucd/*.h
 # -I espeak, -I lib       config.h + private libespeak-ng headers ("." + "libespeak-ng")
-# --preload-file          stages the ~2.2MB 6-language data set at /espeak in
-#                          the virtual FS (emitted as web/snt_g2p.data, fetched
-#                          by web/snt_g2p.js at load time)
+# --preload-file          stages the ~3.2MB 15-language data set at /espeak
+#                          in the virtual FS (emitted as web/snt_g2p.data,
+#                          fetched by web/snt_g2p.js at load time)
+#
+# Russian is deliberately ABSENT from that set: a full ru_dict is 8.2MB raw
+# / 3.5MB brotli -- 4x everything else combined -- and even fetched lazily
+# that is multi-megabyte on first use.  Its id table IS in
+# cp_id_tables_multi.h (slot 10); the DICTIONARY is assembled per
+# utterance from web/g2p-lazy/ru/ and compiled in-browser by espeak's own
+# compiler.  That is why FS and _espeak_ng_CompileDictionary are exported:
+# compiledict.c is already linked in (build_g2p.sh has always compiled it),
+# so the module can write a small ru_listx into its own FS, call
+# espeak_ng_CompileDictionary, and get a dictionary whose phoneme ids are
+# identical to the full 8.6MB one.  See web/ru_lexicon.js and the gate
+# verify_g2p_ru_shards_node.mjs (100.000%% of 1,886 FLORES sentences).
+#
+# The injected voice file MUST go to the FLAT path /espeak/lang/ru, not
+# /espeak/lang/zle/ru where piper ships it.  espeak_ng_SetVoiceByName()
+# tries LoadVoice(name, 1) first, which stats only <data>/voices/<name>
+# and <data>/lang/<name> -- no subdirectory walk.  Subdirectory voices are
+# reachable only via voices_list, and that list is built once by
+# espeak_ListVoices() on the first voice lookup and then cached
+# (n_voices_list != 0), so a file written after init is invisible to it.
+# The flat path sidesteps the cache entirely.  See
+# verify_g2p_ru_shards_node.mjs, the 100.000% gate for that path.
 #
 # Memory: FIXED at 32MB (no -sALLOW_MEMORY_GROWTH). The preload-file loader
 # calls TextDecoder.decode() on views over the module heap, and Chrome
@@ -77,8 +99,8 @@ emcc \
   --preload-file "$data@/espeak" \
   -sMODULARIZE=1 -sEXPORT_NAME=SaanoG2P \
   -sINITIAL_MEMORY=33554432 \
-  -sEXPORTED_FUNCTIONS='_malloc,_free,_snt_g2p_init,_snt_g2p_set_voice,_snt_g2p_text_to_ids,_snt_g2p_text_to_ipa' \
-  -sEXPORTED_RUNTIME_METHODS='cwrap,HEAP32,HEAPU8,stringToUTF8,UTF8ToString,lengthBytesUTF8' \
+  -sEXPORTED_FUNCTIONS='_malloc,_free,_snt_g2p_init,_snt_g2p_set_voice,_snt_g2p_text_to_ids,_snt_g2p_text_to_ipa,_espeak_ng_CompileDictionary' \
+  -sEXPORTED_RUNTIME_METHODS='cwrap,HEAP32,HEAPU8,stringToUTF8,UTF8ToString,lengthBytesUTF8,FS' \
   -sENVIRONMENT=web,worker,node \
   -o "$web/snt_g2p.js"
 

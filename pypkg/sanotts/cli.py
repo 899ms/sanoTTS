@@ -14,7 +14,13 @@ from pathlib import Path
 
 import numpy as np
 
-from .engine import Synthesizer
+from .engine import (
+    DEFAULT_NANO_G2P,
+    DEFAULT_PIPERLITE_G2P,
+    NANO_G2P_CHOICES,
+    PIPERLITE_G2P_CHOICES,
+    Synthesizer,
+)
 from .frontend import FrontendError
 from .voicepack import VoicePackError
 
@@ -42,13 +48,38 @@ def _add_say_args(parser: argparse.ArgumentParser) -> None:
         default=None,
         help="Override the voice's default speaking-rate scale (>0; larger = slower).",
     )
+    parser.add_argument(
+        "--nano-g2p",
+        choices=NANO_G2P_CHOICES,
+        default=DEFAULT_NANO_G2P,
+        help=("Grapheme-to-phoneme path for the nano voices (heart, heart-nano): "
+              "'espeak' runs espeak-ng on every word, 'lexicon' uses the vendored "
+              "misaki dictionaries plus a numpy fallback and needs no espeak-ng. "
+              "Ignored by the piperlite voices."),
+    )
+    parser.add_argument(
+        "--piperlite-g2p",
+        choices=PIPERLITE_G2P_CHOICES,
+        default=DEFAULT_PIPERLITE_G2P,
+        help=("Grapheme-to-phoneme path for the piperlite voices (amy, kristin, "
+              "hfc, id, vi): 'espeak' is what they were distilled against and "
+              "needs espeak-ng; 'lexicon' is the default and reaches the same "
+              "phoneme ids with no espeak-ng -- from the vendored misaki "
+              "dictionaries for the English voices, and from written-out "
+              "Indonesian and Vietnamese orthographic rules for id and vi; "
+              "'indo' changes the id voice only, reading Indonesian through the "
+              "vendored indo-g2p tables so the schwa is looked up rather than "
+              "guessed from the stress and word-final k is a glottal stop "
+              "(see docs/id-indo-g2p-frontend.md). Ignored by the nano voices."),
+    )
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable info-level logging.")
 
 
 def _run_say(args: argparse.Namespace) -> int:
     logging.basicConfig(level=logging.INFO if args.verbose else logging.WARNING, format="%(name)s: %(message)s")
     try:
-        synth = Synthesizer(args.voice, voice_dir=args.voice_dir, cache_dir=args.cache_dir)
+        synth = Synthesizer(args.voice, voice_dir=args.voice_dir, cache_dir=args.cache_dir,
+                            nano_g2p=args.nano_g2p, piperlite_g2p=args.piperlite_g2p)
         result = synth.synthesize(args.text, duration_length_scale=args.duration_length_scale)
     except (FrontendError, VoicePackError, ValueError, RuntimeError, NotImplementedError) as exc:
         print(f"sanotts: error: {exc}", file=sys.stderr)

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Ampixa
 # build_ios.sh -- produce SanoTTS.xcframework (device + simulator, arm64).
 #
 # Drop the result into an Xcode project or an SPM binaryTarget, add

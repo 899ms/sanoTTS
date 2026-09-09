@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Ampixa
+//
+// The sanoTTS inference runtime is MIT; see LICENSE.MIT for the exact file
+// list and why the split is sound. The repository as a whole is GPL-3.0,
+// because the grapheme-to-phoneme layer embeds espeak-ng. This file does not.
 package com.ampixa.sanotts
 
 /**
@@ -27,12 +33,20 @@ class SanoTTS private constructor(private var handle: Long) : AutoCloseable {
             return SanoTTS(h)
         }
 
-        @JvmStatic private external fun nativeOpen(front: String, dec: String): Long
-        @JvmStatic private external fun nativeClose(handle: Long)
-        @JvmStatic private external fun nativeLastError(handle: Long): String
-        @JvmStatic private external fun nativeSpeak(handle: Long, ids: IntArray): FloatArray?
-        @JvmStatic private external fun nativeSampleRate(handle: Long): Int
-        @JvmStatic private external fun nativeSetSeed(handle: Long, seed: Long)
+        // No @JvmStatic: these belong to the companion object, so their JNI
+        // names are Java_com_ampixa_sanotts_SanoTTS_00024Companion_<method>
+        // ($ escaped as _00024). @JvmStatic additionally emits a static
+        // bridge on SanoTTS, which does not change the native symbol but does
+        // invite the reader to expect Java_..._SanoTTS_<method>. The shims in
+        // sanotts_jni.c export exactly the names above; that was checked
+        // against the built .so with llvm-nm, because a mismatch compiles
+        // cleanly and only fails at runtime.
+        private external fun nativeOpen(front: String, dec: String): Long
+        private external fun nativeClose(handle: Long)
+        private external fun nativeLastError(handle: Long): String
+        private external fun nativeSpeak(handle: Long, ids: IntArray): FloatArray?
+        private external fun nativeSampleRate(handle: Long): Int
+        private external fun nativeSetSeed(handle: Long, seed: Long)
     }
 
     val sampleRate: Int get() = nativeSampleRate(handle)

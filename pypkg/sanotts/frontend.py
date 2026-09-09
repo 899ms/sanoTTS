@@ -32,14 +32,19 @@ of trusting ``os.path.exists`` alone.
 
 from __future__ import annotations
 
+import atexit
 import glob
 import logging
+import shutil
+import tempfile
 import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import numpy as np
+
+from .mexican_g2p import normalize_mexican_g2p
 
 logger = logging.getLogger("sanotts.frontend")
 
@@ -121,6 +126,51 @@ def load_phoneme_table(piper_config_path: Path) -> PhonemeTable:
     return PhonemeTable(espeak_voice=str(espeak_voice), id_map=id_map)
 
 
+_COMPAT_DIR: Path | None = None
+
+
+def _espeak_compat_data_dir(data_path: str | None) -> str | None:
+    """A data directory espeak-ng will accept however it resolves the path.
+
+    espeakng-loader ships working data, and espeak still refuses it: handed
+    the data directory it falls back to the path compiled into the wheel --
+    which points at the CI machine that built it
+    (/Users/runner/work/espeakng-loader/...) -- and handed the parent it looks
+    for `<parent>/phontab`, one level above where phontab actually is. Either
+    way espeak prints "Error processing file ... phontab" and calls exit(),
+    so the probe loop below cannot catch it: the process simply dies. That is
+    why text input failed on an otherwise correct install.
+
+    Rather than guess which reading a given espeak build uses, this makes both
+    true at once. A directory of symlinks where `<dir>/phontab` and every
+    other data file resolve, and `<dir>/espeak-ng-data` also resolves to the
+    real directory, satisfies whichever one espeak applies. Symlinks, so it
+    costs a few hundred inodes and no copied bytes.
+    """
+    global _COMPAT_DIR
+    if _COMPAT_DIR is not None:
+        return str(_COMPAT_DIR)
+    if not data_path:
+        return None
+    source = Path(data_path)
+    if not source.is_dir() or not (source / "phontab").is_file():
+        return None
+    try:
+        compat = Path(tempfile.mkdtemp(prefix="sanotts-espeak-")) / "espeak-ng-data"
+        compat.mkdir(parents=True)
+        for entry in source.iterdir():
+            (compat / entry.name).symlink_to(entry)
+        nested = compat / "espeak-ng-data"
+        if not nested.exists():
+            nested.symlink_to(source.resolve())
+    except OSError as exc:  # a read-only or symlink-hostile filesystem
+        logger.debug("could not build the espeak compat data dir: %s", exc)
+        return None
+    atexit.register(shutil.rmtree, compat.parent, True)
+    _COMPAT_DIR = compat
+    return str(compat)
+
+
 class EspeakEngine:
     """Lazily-initialized espeak-ng backend, shared across voices.
 
@@ -141,7 +191,9 @@ class EspeakEngine:
         except ImportError as exc:  # pragma: no cover - dependency missing
             raise FrontendError(
                 "the 'espeakng-loader' package is required for phonemization; "
-                "install it with `pip install espeakng-loader`"
+                "install it with `pip install sanotts[espeak]`. That extra is GPL-3.0 "
+                "and is why it is not installed by default; the English, Indonesian "
+                "and Vietnamese voices need no espeak at all."
             ) from exc
         try:
             from phonemizer.backend import EspeakBackend
@@ -149,11 +201,16 @@ class EspeakEngine:
         except ImportError as exc:  # pragma: no cover - dependency missing
             raise FrontendError(
                 "the 'phonemizer-fork' package is required for phonemization; "
-                "install it with `pip install phonemizer-fork`"
+                "install it with `pip install sanotts[espeak]`. That extra is GPL-3.0 "
+                "and is why it is not installed by default; the English, Indonesian "
+                "and Vietnamese voices need no espeak at all."
             ) from exc
 
         library_path = espeakng_loader.get_library_path()
-        data_candidates = [espeakng_loader.get_data_path()]
+        data_candidates = [
+            _espeak_compat_data_dir(espeakng_loader.get_data_path()),
+            espeakng_loader.get_data_path(),
+        ]
         for pattern in _DATA_PATH_CANDIDATES:
             data_candidates.extend(sorted(glob.glob(pattern)))
 
@@ -209,7 +266,28 @@ class EspeakEngine:
         # which accent espeak uses), not a phoneme-table substitution.
         candidates = [espeak_voice]
         if "-" not in espeak_voice:
+            # Ask espeak what it actually has rather than guessing suffixes.
+            # The old list was ["-us", "-gb"], which is only ever right for
+            # English: espeak has no fr-us, so a French voice whose config says
+            # "fr" failed outright even though fr-fr was sitting right there.
+            # Prefer the doubled form (fr-fr, es-es, pt-pt) when espeak offers
+            # it, since that is the home region of the language, then any other
+            # regional variant in a stable order.
+            try:
+                supported = set(EspeakBackend.supported_languages())
+            except Exception:  # noqa: BLE001 - discovery is best-effort
+                supported = set()
+            regional = sorted(v for v in supported if v.startswith(f"{espeak_voice}-"))
+            preferred = f"{espeak_voice}-{espeak_voice}"
+            if preferred in regional:
+                regional.remove(preferred)
+                regional.insert(0, preferred)
+            candidates += regional
+            # Keep the historical English guesses last, for a build whose
+            # supported_languages() we could not read.
             candidates += [f"{espeak_voice}-us", f"{espeak_voice}-gb"]
+        seen: set[str] = set()
+        candidates = [c for c in candidates if not (c in seen or seen.add(c))]
 
         last_error: Exception | None = None
         for candidate in candidates:
@@ -276,6 +354,8 @@ def text_to_phoneme_ids(text: str, table: PhonemeTable) -> np.ndarray:
     clean_text = text.strip()
     if not clean_text:
         raise FrontendError("text is empty")
+    # Gated on the voice: a no-op for everything except espeak's es-419.
+    clean_text = normalize_mexican_g2p(clean_text, table.espeak_voice)
     phonemized = _ENGINE.phonemize(clean_text, table.espeak_voice)
     phonemes = list(unicodedata.normalize("NFD", phonemized))
     ids = phonemes_to_ids(phonemes, table)
