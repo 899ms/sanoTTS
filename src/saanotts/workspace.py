@@ -36,7 +36,7 @@ def discover_repo_root(start: Path | None = None) -> Path:
         if (candidate / ".git").exists() and (candidate / "README.md").is_file():
             return candidate
     raise RuntimeError(
-        "could not find the saanoTTS repository; set SAANOTTS_ROOT explicitly"
+        "could not find the sanoTTS repository; set SAANOTTS_ROOT explicitly"
     )
 
 

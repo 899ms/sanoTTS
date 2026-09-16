@@ -1,5 +1,5 @@
 name: Board benchmark report
-description: Report saanoTTS speed and correctness on a board we have not measured
+description: Report sanoTTS speed and correctness on a board we have not measured
 title: "[board] <chip / board name>"
 labels: ["board-report"]
 body:

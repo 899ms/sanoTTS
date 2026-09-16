@@ -1,4 +1,4 @@
-/* snt_front_f32.c -- portable fp32 reference of the saanoTTS front half
+/* snt_front_f32.c -- portable fp32 reference of the sanoTTS front half
  * (duration student + token_context acoustic student + optional output
  * adapter). Plain C99, no malloc: all working memory comes from the caller's
  * arena. Semantics mirror tools/train_roota_piper_duration_student.py

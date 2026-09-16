@@ -1,6 +1,6 @@
 # saanotts-mcu — portable neural TTS runtime for microcontrollers
 
-One C99 core, one small port API, any MCU. The full saanoTTS stack
+One C99 core, one small port API, any MCU. The full sanoTTS stack
 (phoneme IDs -> duration -> acoustic -> iSTFT decoder -> PCM) in int8,
 validated bit-exact against the PyTorch reference on every platform via
 embedded golden vectors.

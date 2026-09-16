@@ -1,11 +1,11 @@
-# saanoTTS-MCU — MCU classes and portable-library design
+# sanoTTS-MCU — MCU classes and portable-library design
 
-Authoritative definition of (1) which microcontrollers can run the saanoTTS
+Authoritative definition of (1) which microcontrollers can run the sanoTTS
 runtime and how well, and (2) the library architecture that lets one C99
 codebase span all of them by wrapping whatever kernel library each platform
 ships. This document is locked; changes are deliberate revisions, not proposals.
 
-Target model: the deployable ~745k-param saanoTTS stack (duration → acoustic →
+Target model: the deployable ~745k-param sanoTTS stack (duration → acoustic →
 iSTFT decoder), int8, ~680 KB shipped weights. (The larger Fork-B quality model
 is a Tier-N / desktop target, not the general-MCU target.)
 
@@ -88,7 +88,7 @@ the future quality path.
 ## 4. Library architecture — one core, many platforms, many kernel libraries
 
 Two senses of "library", both true by design:
-1. **saanoTTS-MCU IS a library** firmware links into its build — one static
+1. **sanoTTS-MCU IS a library** firmware links into its build — one static
    core, a caller-owned arena, a PCM callback. It never allocates, never owns a
    thread, never assumes an OS.
 2. **Each port WRAPS whatever kernel library its platform ships** — esp-nn,

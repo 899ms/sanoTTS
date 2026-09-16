@@ -1,4 +1,4 @@
-"""sanotts: a self-contained, numpy-only saanoTTS inference package.
+"""sanotts: a self-contained, numpy-only sanoTTS inference package.
 
     import sanotts
     result = sanotts.synthesize("Hello world", voice="amy")
@@ -14,7 +14,7 @@ synthesize() (which reloads the voice pack every time):
 
 Voices are resolved either from a local directory (--voice-dir / voice_dir=,
 a package produced by tools/export_roota_self_contained_package.py in the
-saanoTTS research repo) or downloaded by name into ~/.cache/sanotts/.
+sanoTTS research repo) or downloaded by name into ~/.cache/sanotts/.
 """
 
 from __future__ import annotations

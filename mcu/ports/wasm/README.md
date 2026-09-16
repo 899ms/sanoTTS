@@ -1,4 +1,4 @@
-# WebAssembly port — saanoTTS in the browser
+# WebAssembly port — sanoTTS in the browser
 
 The full text→PCM stack compiled to WebAssembly and run entirely client-side:
 no server, no network after the initial asset load, no WebGPU. The browser is

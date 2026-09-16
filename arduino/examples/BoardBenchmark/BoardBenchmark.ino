@@ -1,4 +1,4 @@
-/* BoardBenchmark.ino -- run saanoTTS on a board nobody has measured yet,
+/* BoardBenchmark.ino -- run sanoTTS on a board nobody has measured yet,
  * and print one block of numbers you can paste into a GitHub issue.
  *
  * WHY THIS SKETCH EXISTS
@@ -281,7 +281,7 @@ static int corr_cb(const float *pcm, int n, void *user) {
 
 static void run_benchmark() {
   Serial.println();
-  Serial.println(F("saanoTTS BoardBenchmark"));
+  Serial.println(F("sanoTTS BoardBenchmark"));
   Serial.println(F("======================="));
 
   /* Take the largest arena this board will actually hand over. Leave some

@@ -1587,11 +1587,11 @@ static int synth_stream_ids(const int *ids, int n_ids, char *summary, int summar
 static esp_err_t index_get(httpd_req_t *req) {
   static const char page[] =
     "<!doctype html><html><head><meta name=viewport content='width=device-width,initial-scale=1'>"
-    "<title>saanoTTS S3 realtime</title><style>"
+    "<title>sanoTTS S3 realtime</title><style>"
     "body{font-family:system-ui;margin:24px;max-width:760px}textarea,input{width:100%;font:16px system-ui;padding:10px;margin:8px 0}"
     "button{font:16px system-ui;padding:10px 14px}.row{display:flex;gap:8px}.row button{flex:1}"
     "#status{white-space:pre-wrap;background:#f4f4f4;padding:12px;min-height:48px}"
-    "</style></head><body><h1>saanoTTS ESP32-S3 &mdash; realtime</h1>"
+    "</style></head><body><h1>sanoTTS ESP32-S3 &mdash; realtime</h1>"
     "<p>fsd r7 engine, 0.27x RT: speech starts as soon as you submit.</p>"
     "<form id=f><label>Text</label><input name=text value='This runs on a three dollar chip'>"
     "<label>Advanced: Piper phoneme IDs (optional)</label><textarea name=ids rows=4 placeholder='1,0,41,0,...,2'></textarea>"

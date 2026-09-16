@@ -1,5 +1,5 @@
 //
-// saanoTTS int8 matrix-vector kernels for ESP32-S3 (Xtensa LX7 PIE).
+// sanoTTS int8 matrix-vector kernels for ESP32-S3 (Xtensa LX7 PIE).
 //
 // Motivation (measured): calling esp_nn_dot_s8 once per output row spends
 // ~90% of trunk time on call overhead and activation reloads. These kernels

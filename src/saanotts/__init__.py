@@ -1,1 +1,1 @@
-"""Shared Python APIs for the saanoTTS research workspace."""
+"""Shared Python APIs for the sanoTTS research workspace."""

@@ -1,8 +1,8 @@
-# saanoTTS Language Porting Recipe
+# sanoTTS Language Porting Recipe
 
 Date: 2026-06-29
 
-This is the reusable saanoTTS recipe for making a tiny Piper-distilled neural
+This is the reusable sanoTTS recipe for making a tiny Piper-distilled neural
 TTS voice for a new language. It is based on the Root A Nepali, English, Hindi,
 and Chinese runs.
 

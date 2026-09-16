@@ -1,4 +1,4 @@
-"""Text -> Piper phoneme IDs for the saanoTTS S3 dashboard.
+"""Text -> Piper phoneme IDs for the sanoTTS S3 dashboard.
 
 The ESP32-S3 can't run espeak, so its on-device letter-to-sound frontend garbles
 anything nontrivial. This service runs on the Windows box next to the board and

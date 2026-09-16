@@ -5,7 +5,7 @@ Two package layouts exist, because the project has two graphs.
 **piperlite** (voices-v1) -- run by `models.py`:
   - manifest.json          (format "roota.raw-fp16.v1"; see
                              tools/export_roota_self_contained_package.py
-                             in the saanoTTS research repo for the exporter)
+                             in the sanoTTS research repo for the exporter)
   - weights.fp16.bin        (flat fp16 blob, tensors addressed by
                              manifest offset_bytes/nbytes)
   - piper-phoneme-config.json (codepoint -> phoneme-id table + espeak voice)

@@ -47,18 +47,11 @@ espeak-ng, which is GPL-3.0. Nothing below embeds, links, or derives from it.
   mobile/dart/sanotts.dart
   mobile/CMakeLists.txt
   mobile/build_ios.sh
-  pypkg/**                           (the `sanotts` PyPI package)
 
 Everything else in the repository — in particular the espeak-ng ports under
 mcu/ports/*/espeak*, mcu/ports/esp32s3/firmware/components/espeak-ng/,
 mcu/ports/wasm/build_g2p.sh, and the training and evaluation tooling under
-tools/ — stays GPL-3.0-or-later. `npmpkg/` also stays GPL-3.0-or-later,
-because its `dist/` still ships espeak-ng compiled to WebAssembly.
-
-pypkg/ carries third-party data under its own terms, recorded in
-pypkg/sanotts/g2p_data/NOTICE.md: misaki's pronunciation dictionaries and the
-out-of-vocabulary model are Apache-2.0. Neither is GPL, and neither is
-espeak-derived.
+tools/ — stays GPL-3.0-or-later.
 
 ================================================================================
 WHY THIS SPLIT IS SOUND
@@ -73,20 +66,6 @@ piper, or GPL, and no third-party source: the only "verbatim" note in the
 runtime is a cross-reference to another file in this same repository. The
 espeak-ng code lives entirely in the G2P and port layers, which are not
 listed above and stay GPL-3.0.
-
-pypkg/ was added to this list on 2026-09-04, once every voice it ships had a
-grapheme-to-phoneme path that does not use espeak: misaki's Apache-2.0
-dictionaries plus an Apache-2.0 out-of-vocabulary model for English, and rule
-front ends written from the orthography for Indonesian and Vietnamese. Each
-replacement was measured against the path it replaced rather than assumed
-equivalent; the evidence is under experiments/evidence/. espeak was used only
-as a black-box oracle to diff against — no espeak dictionary or rule file was
-read into this repository, and nothing here was trained on espeak's output.
-
-One trap found while doing it, recorded so nobody walks into it later: misaki
-declares Apache-2.0 repository-wide, but misaki/vi.py is a port of vPhon,
-which is GPL-3.0 — the two trans() functions are 90.5% line-identical with
-33 comments surviving verbatim. Nothing from it is used here.
 
 Two algorithm reimplementations are worth naming, since neither is a copy:
 

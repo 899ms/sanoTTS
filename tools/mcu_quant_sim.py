@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""C-faithful simulation of the saanoTTS MCU int8 runtime.
+"""C-faithful simulation of the sanoTTS MCU int8 runtime.
 
 Why this file exists
 --------------------
