@@ -166,6 +166,65 @@ front_golden_test: src/snt_front_f32.c test/front_golden_test.c
 test-front: front_golden_test
 	./front_golden_test $(FRONT_GOLDEN)
 
+# int8 front-half gate: same fixtures as test-front, plus the blobs from
+# tools/export_front_q8.py. Dimensions come from the blob, so ONE binary runs
+# every lineage -- the thing esp32c3/fsd/export_front_q8.py's generated header
+# made impossible.
+# FRONT_GOLDEN's amy/vi/hindi fixtures predate the int8 exporter and carry no
+# q8 blobs -- their training checkpoints are gone, so they cannot be given any.
+# amy-pkg is the same voice rebuilt from the PUBLISHED package
+# (repack_package_to_checkpoints -> export_front_golden -> export_front_q8),
+# which is exactly the route a user with only a shipped voice has.
+FRONT_Q8_GOLDEN ?= test/golden_front/amy-pkg
+
+.PHONY: test-front-q8 test-front-q8-f32act
+
+front_q8_golden_test: src/snt_front_q8.c test/front_q8_golden_test.c
+	$(CC) $(CFLAGS) $^ -lm -o $@
+
+test-front-q8: front_q8_golden_test
+	./front_q8_golden_test $(FRONT_Q8_GOLDEN)
+
+# Float activations over the same int8 weight blob: the difference between
+# this number and test-front-q8's is the cost of the 12-bit activation lane,
+# as opposed to the cost of int8 weights.
+front_q8_f32act_test: src/snt_front_q8.c test/front_q8_golden_test.c
+	$(CC) $(CFLAGS) -DSNT_FRONT_Q8_ACT_F32 $^ -lm -o $@
+
+test-front-q8-f32act: front_q8_f32act_test
+	./front_q8_f32act_test $(FRONT_Q8_GOLDEN)
+
+# The blob checks, exercised. A quantised runtime handed a wrong or stale
+# blob does not crash -- it synthesizes plausible garbage -- so the refusals
+# need a test of their own.
+front_q8_negative_test: src/snt_front_q8.c test/front_q8_negative_test.c
+	$(CC) $(CFLAGS) $^ -lm -o $@
+
+.PHONY: test-front-q8-negative
+test-front-q8-negative: front_q8_negative_test
+	./front_q8_negative_test $(E2E_FRONT) $(E2E_DEC)
+
+# Whole-voice composition: ids -> int8 front -> int8 decoder -> PCM, beside
+# the fp32 chain the other two gates already anchor against PyTorch.
+#   make e2e E2E_FRONT=test/golden_front/amy E2E_DEC=test/golden_piperlite/amy \
+#            E2E_LS=1.08 E2E_OUT=/tmp/e2e E2E_IDS="/tmp/ids/*.bin"
+E2E_FRONT ?= test/golden_front/amy-pkg
+E2E_DEC ?= test/golden_piperlite/amy-pkg
+E2E_LS ?= 1.08
+E2E_OUT ?= /tmp/piperlite-e2e
+E2E_IDS ?= $(E2E_FRONT)/ids.bin
+
+.PHONY: e2e
+
+piperlite_e2e: src/snt_front_q8.c src/snt_front_f32.c src/snt_piperlite.c \
+               src/snt_piperlite_q8.c test/piperlite_e2e_main.c
+	$(CC) $(CFLAGS) $^ -lm -o $@
+
+e2e: piperlite_e2e
+	@mkdir -p $(E2E_OUT)
+	./piperlite_e2e $(E2E_FRONT) $(E2E_DEC) $(E2E_LS) $(E2E_OUT) $(E2E_IDS)
+
 clean:
 	rm -f snt_golden_test piperlite_golden_test front_golden_test piperlite_q8_golden_test \
+	      front_q8_golden_test front_q8_f32act_test front_q8_negative_test piperlite_e2e \
 	      snt_nano_golden_test snt_nano_fastmath_test

@@ -83,6 +83,10 @@ esp32c3/test/emu_out/
 /mcu/piperlite_golden_test
 /mcu/piperlite_q8_golden_test
 /mcu/front_golden_test
+/mcu/front_q8_golden_test
+/mcu/front_q8_f32act_test
+/mcu/front_q8_negative_test
+/mcu/piperlite_e2e
 /esp32c3/fsd/fsd_e2e_fast
 /esp32c3/fsd/fsd_e2e_frozen
 /esp32c3/fsd/fsd_e2e_full

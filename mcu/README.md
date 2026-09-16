@@ -109,6 +109,63 @@ Correctness contract: every port must pass `test/golden_main.c` with
 correlation >= 0.98 against the shipped golden audio; the scalar
 reference kernels define the exact integer semantics SIMD must match.
 
+## The piperlite lineage, in int8 end to end
+
+`snt_tts.c` above is the R7 lineage. The piperlite lineage is a separate,
+larger stack — a `token_context` acoustic student feeding a 192-channel latent
+into an upsampling waveform decoder — and it now runs entirely from int8
+weights:
+
+```
+include/snt_front_f32.h  src/snt_front_f32.c   <- front half, fp32 reference
+include/snt_front_q8.h   src/snt_front_q8.c    <- front half, int8
+include/snt_piperlite.h  src/snt_piperlite.c   <- decoder, fp32 reference
+include/snt_piperlite_q8.h src/snt_piperlite_q8.c <- decoder, int8
+test/piperlite_e2e_main.c                      <- ids -> PCM, both stacks
+```
+
+Unlike `snt_tts.c`, these read every dimension **from the blob**, not from a
+generated header. `src/model/front_q8_meta.h` is why: its `#define`s pinned
+that runtime to one model, so the int8 front that existed could not be pointed
+at a second voice. `snt_front_q8_init()` takes dims, the output-adapter shape
+and the activation-clip table out of `front_meta_q8.bin`, checks every slot's
+size against the shape the dims imply, checks the widest fan-in against the
+int32 accumulator, and refuses anything that does not add up.
+
+```bash
+make -C mcu test-front            # fp32 front vs PyTorch (exact durations)
+make -C mcu test-front-q8         # int8 front vs the same goldens
+make -C mcu test-front-q8-f32act  # int8 weights, fp32 activations
+make -C mcu test-front-q8-negative# the blob refusals
+make -C mcu test-piperlite        # fp32 decoder vs PyTorch
+make -C mcu test-piperlite-q8     # int8 decoder
+make -C mcu e2e                   # int8 front + int8 decoder -> wavs
+```
+
+Blobs come from `tools/export_front_golden.py` then `tools/export_front_q8.py`
+(front) and `tools/export_piperlite_golden.py` then
+`tools/export_piperlite_q8.py` (decoder), into the same directory. Both int8
+exporters want a calibration pack; `tools/make_front_latent_pack.py` builds one
+from arbitrary text using the voice's own front, so a shipped
+`roota.raw-fp16.v1` package is enough to get here — `export_front_q8.py
+--package` repacks one in memory.
+
+Measured on three voices (`experiments/evidence/piperlite-int8-20260916.json`):
+latent correlation 0.99996–0.99998 against the fp32 reference, end-to-end
+waveform correlation 0.9939–0.9995, Whisper CER unchanged within noise, and the
+whole stack 3.9x smaller than its fp32 export (amy: 1,479,204 B vs 5,818,120 B).
+
+Two things to know before changing the front exporter. First, the duration
+student does NOT reproduce PyTorch's frame counts exactly in int8 and cannot be
+made to — its head is `exp()` then round-half-to-even, a hard decision boundary
+— so `front_q8_golden_test.c` gates a tolerance (<= 1 frame per token, <= 1% of
+the total) and the latent correlation is measured on the *golden* durations so
+a one-frame shift cannot masquerade as quantisation error. Second, the
+MSE-optimal clip search the decoder exporter uses is actively harmful here:
+it clipped amy's duration planes to 0.56x of their range for no latent gain and
+cost four tokens their frame count. `export_front_q8.py` defaults to
+`--calib-mode max`.
+
 ## Hard-won portability rules (measured, not theoretical)
 
 1. SIMD reads require resident operands — flash-XIP vector loads return
