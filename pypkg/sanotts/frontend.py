@@ -290,15 +290,41 @@ class EspeakEngine:
         # raises. Retry with a regional variant rather than failing outright;
         # this is a voice-*selection* compatibility shim only (it changes
         # which accent espeak uses), not a phoneme-table substitution.
-        candidates = [espeak_voice]
+        def _build(name: str) -> Any:
+            return EspeakBackend(
+                name,
+                preserve_punctuation=True,
+                punctuation_marks=PUNCTUATION_MARKS,
+                with_stress=True,
+                tie=False,
+                language_switch="remove-flags",
+            )
+
+        # Try the voice the config actually names, FIRST and on its own. Every
+        # shipped voice but a couple of old ones resolves here, and asking
+        # espeak to enumerate its 140 languages before trying costs 0.43 s of
+        # first-call latency to answer a question that was not asked -- which
+        # is every new language's first impression.
+        direct_error: Exception | None = None
+        try:
+            backend = _build(espeak_voice)
+        except Exception as exc:  # noqa: BLE001 - fall through to the shim below
+            # Rebind: Python unbinds the `as` name at the end of the except
+            # block, so referring to it later is a NameError, not a None.
+            direct_error = exc
+        else:
+            self._backends[espeak_voice] = backend
+            return backend
+
+        # Only now pay for discovery. Some older voice packages (kristin) were
+        # trained against an espeak-ng where a bare code like "en" was directly
+        # selectable; newer builds expose only regional variants, so "en" now
+        # raises. Ask espeak what it has rather than guessing suffixes -- the
+        # old guesses were ["-us", "-gb"], right only for English, so a French
+        # voice whose config said "fr" failed with fr-fr sitting right there.
+        # This is a voice-SELECTION shim, not a phoneme-table substitution.
+        candidates: list[str] = []
         if "-" not in espeak_voice:
-            # Ask espeak what it actually has rather than guessing suffixes.
-            # The old list was ["-us", "-gb"], which is only ever right for
-            # English: espeak has no fr-us, so a French voice whose config says
-            # "fr" failed outright even though fr-fr was sitting right there.
-            # Prefer the doubled form (fr-fr, es-es, pt-pt) when espeak offers
-            # it, since that is the home region of the language, then any other
-            # regional variant in a stable order.
             try:
                 supported = set(EspeakBackend.supported_languages())
             except Exception:  # noqa: BLE001 - discovery is best-effort
@@ -309,23 +335,14 @@ class EspeakEngine:
                 regional.remove(preferred)
                 regional.insert(0, preferred)
             candidates += regional
-            # Keep the historical English guesses last, for a build whose
-            # supported_languages() we could not read.
             candidates += [f"{espeak_voice}-us", f"{espeak_voice}-gb"]
         seen: set[str] = set()
         candidates = [c for c in candidates if not (c in seen or seen.add(c))]
+        last_error = direct_error
 
-        last_error: Exception | None = None
         for candidate in candidates:
             try:
-                backend = EspeakBackend(
-                    candidate,
-                    preserve_punctuation=True,
-                    punctuation_marks=PUNCTUATION_MARKS,
-                    with_stress=True,
-                    tie=False,
-                    language_switch="remove-flags",
-                )
+                backend = _build(candidate)
             except Exception as exc:  # noqa: BLE001 - trying multiple voice-name spellings
                 last_error = exc
                 continue
