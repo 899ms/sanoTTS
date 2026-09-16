@@ -1,5 +1,5 @@
 {
- "_comment": "Alias -> release package name for VOICE_RELEASE_BASE_URL/<package>.tar.gz downloads. Package names match the directories under releases/multivoice-20260713 in the sanoTTS research repo, which is what tools/export_roota_self_contained_package.py produces per voice.",
+ "_comment": "Alias -> release package name for VOICE_RELEASE_BASE_URL/<package>.tar.gz downloads. Package names match the directories under releases/multivoice-20260713 in the saanoTTS research repo, which is what tools/export_roota_self_contained_package.py produces per voice.",
  "voices": {
   "amy": {
    "package": "amy-en-1p46m",

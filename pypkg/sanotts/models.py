@@ -1,4 +1,4 @@
-"""Pure-numpy forward passes for the sanoTTS Root-A student stack.
+"""Pure-numpy forward passes for the saanoTTS Root-A student stack.
 
 These mirror the fp32 reference C runtime (mcu/src/snt_front_f32.c and
 mcu/src/snt_piperlite.c in the parent research repo), which itself was
