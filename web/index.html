@@ -278,8 +278,8 @@
     <li>runs <b>real-time</b> on a <b>$3 microcontroller</b> (ESP32-S3)</li>
     <li>runs right in your browser &mdash; <b>WebAssembly</b>, no server</li>
     <li>under <b>4&nbsp;MB</b> per voice, zero dependencies (espeak-ng phonemizer included)</li>
-    <li><b>11 voices</b> across <b>6 languages</b> &mdash; English, Nepali (नेपाली), Hindi (हिन्दी),
-      Vietnamese (Tiếng Việt), Indonesian (Bahasa), Chinese (中文) &mdash; all synthesizing live on this page</li>
+    <li><b>12 voices</b> across <b>7 languages</b> &mdash; English, Nepali (नेपाली), Hindi (हिन्दी),
+      Vietnamese (Tiếng Việt), Indonesian (Bahasa), Chinese (中文), and Polish (Polski) &mdash; all synthesizing live on this page</li>
     <li><b>new:</b> <b>ten more languages</b> &mdash; German, French, Spanish, Italian,
       Portuguese, Russian, Czech, Romanian, Turkish and Arabic &mdash; added 2026-09-08, each in a
       <b>1.56M</b> and (for eight of them) a <b>~511k</b> size, all synthesizing live in the picker
@@ -482,6 +482,11 @@
         <td class="lt-samp"><button class="samp" data-voice="czech" title="synthesize a sentence of Czech live, right now">&#9654; 1.57M</button><button class="samp" data-voice="czech-tiny" title="synthesize a sentence of Czech live, right now">&#9654; 513k</button><span class="sampnote"></span></td>
       </tr>
       <tr>
+        <td class="lt-lang">Polish &#x1F1F5;&#x1F1F1;</td>
+        <td class="lt-m none" data-h="WER">&mdash;</td>
+        <td class="lt-samp"><button class="samp" data-voice="polish" title="synthesize a sentence of Polish live, right now">&#9654; 1.56M</button><span class="sampnote"></span></td>
+      </tr>
+      <tr>
         <td class="lt-lang">Romanian &#x1F1F7;&#x1F1F4;</td>
         <td class="lt-m" data-h="WER">0.392</td>
         <td class="lt-samp"><button class="samp" data-voice="romanian" title="synthesize a sentence of Romanian live, right now">&#9654; 1.57M</button><button class="samp" data-voice="romanian-tiny" title="synthesize a sentence of Romanian live, right now">&#9654; 512k</button><span class="sampnote"></span></td>
@@ -630,6 +635,7 @@ const VOICES = [
   {key:"turkish", group:"turkish", label:"Turkish", params:"1.56M", exact:1562284, flag:"\uD83C\uDDF9\uD83C\uDDF7", live:true, emj:"\uD83D\uDC08"},
   {key:"turkish-tiny", group:"turkish", label:"Turkish", params:"510k", exact:510091, flag:"\uD83C\uDDF9\uD83C\uDDF7", live:true, emj:"\uD83D\uDC08"},
   {key:"arabic", group:"arabic", label:"Arabic", params:"1.57M", exact:1566124, flag:"\uD83C\uDDEF\uD83C\uDDF4", live:true, emj:"\uD83D\uDC2A"},
+  {key:"polish", group:"polish", label:"Polish", params:"1.56M", exact:1565324, flag:"\uD83C\uDDF5\uD83C\uDDF1", live:true, emj:"\uD83E\uDD85"},
 ];
 let voice = VOICES[0];
 // Native default sentence per voice, swapped into the textarea on every mascot
@@ -658,6 +664,7 @@ const DEFAULT_TEXT = {
   romanian:   "Salut! Sunt o voce mică ce trăiește în browserul tău.",
   turkish:    "Merhaba! Tarayıcınızda yaşayan küçük bir sesim.",
   arabic:     "مرحبا! أنا صوت صغير يعيش في متصفحك.",
+  polish:     "Cześć! Jestem małym głosem żyjącym w twojej przeglądarce.",
 };
 
 // The picker draws one TILE per `group` (a language, or a one-off voice), with
