@@ -593,7 +593,7 @@ static const snt_voice_tab_t SNT_VOICE_TABS[19] = {
   {"cs", "cs", CP_ID_CS, 159}, /* slot 15 */
   {"ar", "ar", CP_ID_AR, 159}, /* slot 16 */
   {"tr", "tr", CP_ID_TR, 154}, /* slot 17 */
-  {"pl", "pl", CP_ID_PL, 256}, /* slot 18 */
+  {"pl", "pl", CP_ID_PL, 152}, /* slot 18 */
 };
 
 #endif /* CP_ID_TABLES_MULTI_H */
