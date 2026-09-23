@@ -4,8 +4,8 @@
  "g2p_voice_slot": 18,
  "length_scale": 1.16,
  "sample_rate": 22050,
- "front_bytes": 3338980,
- "dec_bytes": 2923300,
+ "front_bytes": 1669774,
+ "dec_bytes": 1461858,
  "front_dims": {
   "d_vocab": 142,
   "d_hidden": 64,
@@ -45,5 +45,11 @@
   "duration": "artifacts/voices/pl_PL-gosia-medium/duration/duration-student.pt",
   "acoustic": "artifacts/voices/pl_PL-gosia-medium/joint/latent-student.pt",
   "decoder": "artifacts/voices/pl_PL-gosia-medium/joint/decoder-student.pt"
- }
+ },
+ "front": "front_f16.bin",
+ "front_widened_sha256": "ffd5f45d124d1a3a71d99dcbfe191fcf59141abcad72751e1e9642fddffafb37",
+ "dec": "dec_f16.bin",
+ "dec_widened_sha256": "542ace06e11e8aa083f0954fb34fb3c56bc09c7497ba56dbfb9a04c1d092be65",
+ "weights": "f16",
+ "weights_note": "float16 storage, widened to float32 by the loader before it reaches the runtime. float16 is the reference for this voice: it is the precision of the roota.raw-fp16.v1 package every CER/WER number was measured on."
 }
