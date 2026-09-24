@@ -65,6 +65,7 @@ VOICES: Final[tuple[VoiceInfo, ...]] = (
     VoiceInfo("tr-tiny", "Turkish small (510k)", "tr-TR"),
     VoiceInfo("vi", "Vietnamese (1.57M)", "vi-VN"),
     VoiceInfo("zh", "Chinese (1.55M)", "zh-CN"),
+    VoiceInfo("pl", "Polish (1.57M)", "pl-PL"),
 )
 
 VOICES_BY_ALIAS: Final[dict[str, VoiceInfo]] = {v.alias: v for v in VOICES}

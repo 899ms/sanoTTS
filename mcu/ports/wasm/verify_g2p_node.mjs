@@ -72,7 +72,30 @@ const CASES = [
     useTashkeel: false },
   { lang: "tr", text: "Merhaba dünya.", slot: 17, espeakVoice: "tr",
     onnx: resolve(repo, "models/teachers/tr_TR-dfki-medium/tr_TR-dfki-medium.onnx") },
+  { lang: "pl", text: "Dzień dobry świecie.", slot: 18, espeakVoice: "pl",
+    onnx: resolve(repo, "models/teachers/pl_PL-gosia-medium/pl_PL-gosia-medium.onnx") },
 ];
+
+// NO ROW ABOVE CONTAINS A COMMA, and that is not an accident of style -- it is
+// hiding a real divergence that this gate therefore does not catch.
+//
+// Feed "Dzień dobry, świecie." to both sides and python PiperVoice returns 49
+// ids where the WASM module returns 45. The missing four are id 8 (the comma
+// phoneme) and id 3 (the word space that follows it): the browser drops the
+// comma AND the word boundary with it, gluing "dobry" and "świecie" together
+// with no separator. Remove the comma and the two sides agree exactly, 47 ids
+// to 47 -- which is why the row above is comma-free and passes.
+//
+// This is NOT Polish-specific. German, slot 8: "Guten Tag, Welt." gives 41 ids
+// against 43 for the comma-free "Guten Tag Welt." -- two ids shorter, the same
+// comma-plus-space signature. Every shipped language takes this path, so every
+// comma a visitor types loses both its pause and a word boundary.
+//
+// Deliberately not papered over here by adding a comma case and adjusting the
+// expectation: the fix belongs in the G2P, not in the gate, and it is a
+// fleet-wide change that wants its own verification pass. Tracked separately.
+// Until then, be aware that this gate proves parity only for unpunctuated
+// clauses.
 
 // ---- ground truth: python PiperVoice, one process for all languages ------
 const pyScript = `
